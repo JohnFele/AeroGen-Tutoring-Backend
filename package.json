@@ -7,19 +7,13 @@
     "dev": "nodemon --watch src --exec node ./src/server.js"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.6",
+    "@supabase/supabase-js": "^2.118.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-rate-limit": "^6.7.0",
     "express-validator": "^6.15.0",
-    "google-auth-library": "^10.5.0",
-    "helmet": "^7.0.0",
-    "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.0",
-    "nodemailer": "^7.0.10",
-    "uuid": "^9.0.0"
+    "helmet": "^7.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

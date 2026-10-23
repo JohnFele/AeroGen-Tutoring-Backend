@@ -1,0 +1,94 @@
+<!--
+  Subject: Confirm your AeroGen Tutoring account
+  Preheader: One quick step to activate your AeroGen Tutoring account.
+  Paste this HTML into Supabase Dashboard > Authentication > Email Templates > Confirm signup.
+  Brevo is the SMTP delivery service; Supabase renders {{ .ConfirmationURL }}.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Confirm your AeroGen Tutoring account</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#f4f7fc; color:#1f2937; font-family:Arial, Helvetica, sans-serif; -webkit-text-size-adjust:100%;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent; mso-hide:all;">
+      One quick step to activate your AeroGen Tutoring account.
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#f4f7fc;">
+      <tr>
+        <td align="center" style="padding:36px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px;">
+            <tr>
+              <td align="center" style="padding:0 0 22px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" valign="middle" width="44" height="44" style="width:44px; height:44px; border-radius:13px; background-color:#ffad20; background-image:linear-gradient(135deg,#ffd43b 0%,#ffa500 58%,#ff6b35 100%); color:#ffffff; font-size:18px; font-weight:800; letter-spacing:-1px;">
+                      AG
+                    </td>
+                    <td style="padding-left:11px; color:#123d78; font-size:21px; line-height:25px; font-weight:800; letter-spacing:-0.5px;">
+                      AeroGen <span style="color:#6b55c8;">Tutoring</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0; border-radius:20px; background-color:#ffffff; box-shadow:0 12px 36px rgba(20,52,96,0.10);">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td height="7" style="height:7px; border-radius:20px 20px 0 0; background-color:#6d55c8; background-image:linear-gradient(90deg,#004aad 0%,#7654c8 58%,#ec4899 100%); font-size:0; line-height:0;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:42px 44px 38px;">
+                      <p style="margin:0 0 12px; color:#6b55c8; font-size:12px; line-height:18px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase;">
+                        Welcome to AeroGen
+                      </p>
+                      <h1 style="margin:0 0 18px; color:#123d78; font-size:30px; line-height:38px; font-weight:800; letter-spacing:-0.8px;">
+                        Confirm your email
+                      </h1>
+                      <p style="margin:0 0 14px; color:#4b5563; font-size:16px; line-height:26px;">
+                        Thanks for creating an AeroGen Tutoring account. Confirm your email address to activate your account and continue.
+                      </p>
+                      <p style="margin:0 0 28px; color:#4b5563; font-size:16px; line-height:26px;">
+                        Tap the button below to verify this address belongs to you.
+                      </p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;">
+                        <tr>
+                          <td align="center" bgcolor="#004aad" style="border-radius:11px; background-color:#004aad;">
+                            <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block; padding:15px 25px; border:1px solid #004aad; border-radius:11px; color:#ffffff; font-size:15px; line-height:20px; font-weight:700; text-decoration:none;">
+                              Confirm email address
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin:0 0 8px; color:#6b7280; font-size:13px; line-height:21px;">
+                        If the button doesn’t work, copy and paste this link into your browser:
+                      </p>
+                      <p style="margin:0; overflow-wrap:anywhere; word-break:break-word; color:#004aad; font-size:13px; line-height:21px;">
+                        <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#004aad; text-decoration:underline;">{{ .ConfirmationURL }}</a>
+                      </p>
+                      <hr style="height:1px; margin:30px 0 20px; border:0; background-color:#e8edf5;">
+                      <p style="margin:0; color:#7b8493; font-size:12px; line-height:19px;">
+                        If you didn’t create an AeroGen Tutoring account, you can safely ignore this email.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 18px 0; color:#8a93a1; font-size:12px; line-height:19px;">
+                AeroGen Tutoring<br>
+                Making learning accessible for everyone.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

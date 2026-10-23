@@ -1,12 +1,12 @@
-import mongoose from 'mongoose';
 import app from './app.js';
 import { ENV } from './config/env.config.js';
+import { assertSupabaseConfigured } from './config/supabase.js';
 import { log, error } from './utils/logger.js';
 
 const start = async () => {
   try {
-    await mongoose.connect(ENV.MONGO_URI, { autoIndex: true });
-    log('Connected to MongoDB');
+    assertSupabaseConfigured();
+    log('Supabase configuration loaded');
 
     const server = app.listen(ENV.PORT, () => {
       log(`Server listening on ${ENV.PORT} (${ENV.NODE_ENV})`);

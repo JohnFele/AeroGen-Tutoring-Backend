@@ -1,38 +1,46 @@
-import { verifyAccessToken } from "../utils/jwt.util.js";
+import { createUserSupabaseClient } from '../config/supabase.js';
 
-export const authorize = (req, res, next) => {
+export const authorize = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Missing authorization header" });
 
-    const parts = authHeader.split(" ");
+    const [scheme, token, ...extra] = authHeader.split(' ');
+    if (scheme !== 'Bearer' || !token || extra.length) {
+      return res.status(401).json({ message: 'Invalid authorization header format' });
+    }
 
-    if (parts.length !== 2 || parts[0] !== "Bearer") return res.status(401).json({ message: "Invalid authorization header format" });
+    const supabase = createUserSupabaseClient(token);
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) return res.status(401).json({ message: 'Invalid or expired access token' });
 
-    const token = parts[1];
-    const payload = verifyAccessToken(token);
-
-    req.userId = payload.userId;
-    req.userRole = payload.role;
+    req.supabase = supabase;
+    req.userId = data.user.id;
 
     next();
   } catch (error) {
+    if (error.message?.startsWith('Missing required environment variables:')) return next(error);
     return res.status(401).json({ message: "Invalid or expired access token" });
   }
 };
 
-export const authorizeRole = (allowedRoles) => {
+export const authorizeRole = (allowedRoles) => async (req, res, next) => {
   try {
-    if (!req.userRole) return res.status(403).json({ message: "User role not found" });
+    const { data, error } = await req.supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', req.userId)
+      .single();
+    if (error || !data?.role) return res.status(403).json({ message: 'User role not found' });
 
-    const allowedArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
-
-    if (!allowedArray.includes(req.userRole)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+    const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    if (!allowed.includes(data.role)) {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
     }
 
-    next();
+    req.userRole = data.role;
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
