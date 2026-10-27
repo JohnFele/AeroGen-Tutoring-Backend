@@ -2,7 +2,7 @@
 
 The catalogue contains 444 tutoring areas across 16 categories and eight education levels. It includes primary foundations, school subjects and language streams, college/TVET subjects, and undergraduate/postgraduate disciplines. A subject can belong to several levels. These tags describe suitable discovery areas; they do not certify a curriculum, accreditation or institution's module requirements.
 
-No finite list captures every university's module titles. The schema accepts additional subjects, categories and levels as data, so a school-specific subject or university module does not require a schema change. The page provides a contact route for subjects that are not listed.
+No finite list captures every university's module titles. The schema accepts additional subjects, categories and levels as data, so a school-specific subject or university module does not require a schema change. The page provides `/request-subject` for subjects that are not listed. It preserves the searched subject and level, accepts module/institution details, and sends the request to the team through Brevo for manual review. The public tutor search and student dashboard also link to this form. Submitting a request does not automatically publish it in the catalogue.
 
 ## Model
 

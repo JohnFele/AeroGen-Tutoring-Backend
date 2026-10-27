@@ -1,7 +1,42 @@
 import { sendSupportRequest } from './support.controller.js';
+import { educationLevels } from '../data/subjectCatalog.js';
 
 const categories = new Set(['general', 'tutoring', 'billing', 'technical', 'partnership', 'careers', 'talent', 'other']);
 const text = (value, max = 1000) => typeof value === 'string' && value.trim().length <= max ? value.trim() : '';
+
+export const sendSubjectRequest = (req, res) => {
+  const body = req.body || {};
+  if (body.website) return res.status(400).json({ message: 'Unable to submit this request.' });
+  const limits = { firstName: 60, lastName: 60, email: 254, subjectName: 150, moduleCode: 60, institution: 150, educationLevel: 40, programme: 120, studyYear: 80, lessonMode: 20, location: 150, helpNeeded: 2000 };
+  const fields = {};
+  for (const [field, limit] of Object.entries(limits)) {
+    if (body[field] !== undefined && (typeof body[field] !== 'string' || body[field].length > limit)) return res.status(400).json({ message: `Enter a valid ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} (up to ${limit} characters).` });
+    fields[field] = (body[field] || '').trim();
+  }
+  const level = educationLevels.find(level => level.code === fields.educationLevel);
+  if (!fields.firstName || !fields.lastName || fields.subjectName.length < 2 || !level || fields.helpNeeded.length < 20) return res.status(400).json({ message: 'Enter your name, subject or module name, education level and at least 20 characters describing the help you need.' });
+  if (['college', 'undergraduate', 'postgraduate'].includes(fields.educationLevel) && fields.institution.length < 2) return res.status(400).json({ message: 'Enter your college or university name so we can understand the module requirements.' });
+  if (!['online', 'in-person', 'either'].includes(fields.lessonMode)) return res.status(400).json({ message: 'Choose your preferred lesson format.' });
+  if (fields.lessonMode === 'in-person' && fields.location.length < 2) return res.status(400).json({ message: 'Enter your city or area for in-person tutoring.' });
+  req.body = {
+    name: `${fields.firstName} ${fields.lastName}`.slice(0, 120), email: fields.email, topic: 'Other',
+    message: [
+      'Unlisted subject / university module request',
+      `Subject or module: ${fields.subjectName}`,
+      `Module code: ${fields.moduleCode || 'Not supplied'}`,
+      `Education level: ${level.name}`,
+      `Institution: ${fields.institution || 'Not supplied'}`,
+      `Degree / programme: ${fields.programme || 'Not supplied'}`,
+      `Grade / year of study: ${fields.studyYear || 'Not supplied'}`,
+      `Lesson format: ${fields.lessonMode}`,
+      `City / area: ${fields.location || 'Not supplied'}`,
+      '', 'Help needed:', fields.helpNeeded,
+    ].join('\n'),
+  };
+  req.siteSubject = '[AeroGen] Subject or university module request';
+  req.siteSuccessMessage = 'Your subject request was sent. The team will email you about possible tutoring options.';
+  return sendSupportRequest(req, res);
+};
 
 export const sendEnquiry = (req, res) => {
   const { firstName, lastName, email, category, message, website } = req.body || {};
