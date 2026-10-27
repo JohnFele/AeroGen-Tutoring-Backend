@@ -28,8 +28,9 @@ export const sendSupportRequest = async (req, res) => {
   if (!allowedTopics.has(cleanTopic)) {
     return res.status(400).json({ message: 'Choose a valid support topic.' });
   }
-  if (cleanMessage.length < 10 || cleanMessage.length > 4000) {
-    return res.status(400).json({ message: 'Your message must be between 10 and 4000 characters.' });
+  const messageLimit = req.siteMessageLimit || 4000;
+  if (cleanMessage.length < 10 || cleanMessage.length > messageLimit) {
+    return res.status(400).json({ message: `Your message must be between 10 and ${messageLimit} characters.` });
   }
   if (!ENV.BREVO_API_KEY || !ENV.BREVO_SENDER_EMAIL) {
     return res.status(503).json({ message: 'Support email is not configured yet. Please try again later.' });
@@ -97,6 +98,7 @@ export const sendSupportRequest = async (req, res) => {
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
+      signal: AbortSignal.timeout(15000),
       headers: {
         accept: 'application/json',
         'api-key': ENV.BREVO_API_KEY,
@@ -106,9 +108,10 @@ export const sendSupportRequest = async (req, res) => {
         sender: { email: ENV.BREVO_SENDER_EMAIL, name: ENV.BREVO_SENDER_NAME },
         to: [{ email: supportRecipient, name: 'AeroGen Tutoring Support' }],
         replyTo: { email: cleanEmail, name: cleanName },
-        subject: `[AeroGen Support] ${cleanTopic}`,
+        subject: req.siteSubject || `[AeroGen Support] ${cleanTopic}`,
         textContent,
         htmlContent,
+        ...(req.siteAttachments?.length ? { attachment: req.siteAttachments } : {}),
       }),
     });
 
@@ -118,7 +121,7 @@ export const sendSupportRequest = async (req, res) => {
       return res.status(502).json({ message: 'We could not send your support request. Please try again shortly.' });
     }
 
-    return res.status(202).json({ message: 'Your support request was sent. We’ll get back to you by email.' });
+    return res.status(202).json({ message: req.siteSuccessMessage || 'Your support request was sent. We’ll get back to you by email.' });
   } catch (error) {
     console.error('Brevo support email request failed:', error);
     return res.status(502).json({ message: 'We could not send your support request. Please try again shortly.' });

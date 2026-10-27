@@ -26,3 +26,14 @@ The authenticated API exposes `/users/me` for reading and updating editable prof
 Backend: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PORT`, `NODE_ENV`, `FRONTEND_ORIGINS_DEV`, and `FRONTEND_ORIGINS_PROD`.
 
 Frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_BASE_URL_DEV`, `VITE_BASE_URL_PROD`, and `VITE_GOOGLE_CLIENT_ID`.
+
+## Website enquiries and tutor applications
+
+Set `BREVO_API_KEY` to a Brevo API key (not an SMTP key), `BREVO_SENDER_EMAIL` to your verified sender, and optionally `BREVO_SENDER_NAME`. All website requests go to `aerogentutoring@gmail.com`; the visitor's email is the reply-to address.
+
+- `POST /api/v1/site/enquiries` accepts `firstName`, `lastName`, `email`, `category`, and `message` (10–3500 characters). Categories: `general`, `tutoring`, `billing`, `technical`, `partnership`, `careers`, `talent`, `other`. This public endpoint is rate limited to five attempts per 15 minutes per IP.
+- `POST /api/v1/site/tutor-applications` requires a Supabase bearer token and accepts `application` fields plus `documents: [{ kind, name, content }]`, where content is base64. ID and qualification documents are required; CV is optional. ID/CV limits are 5 MB each; qualifications allow 10 MB. The endpoint verifies supported file signatures and is limited to three attempts per hour per IP. Authentication runs before the larger JSON parser.
+
+Both endpoints return `202` only after Brevo accepts the email. Booking and pricing submissions are requests for manual follow-up; they do not create confirmed bookings, charge users, activate plans, or approve tutors. Tutor applications are emailed for review, not written to the application tables by these endpoints. Browser drafts exclude ID numbers, street addresses, and documents.
+
+Run `node --test --test-isolation=none tests/site-requests.test.mjs` for validation, provider-failure, attachment, and HTTP authentication checks. Provider calls are mocked; these tests do not send email.
