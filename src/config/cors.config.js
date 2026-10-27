@@ -25,7 +25,7 @@ export const corsOptions = {
     
     return callback(new Error(`CORS policy: This origin - ${origin} is not allowed`));
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   maxAge: 600,
 };
