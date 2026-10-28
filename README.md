@@ -17,12 +17,15 @@ The Supabase project has the following migrations applied:
 - `20261023162155_catalog_indexes_security.sql` — frontend subject catalog seed data, foreign-key indexes, and restricted trigger-function permissions.
 - `20261023215848_user_profile_settings_update.sql` — lets authenticated users update only their own editable profile columns under RLS.
 - `20261027200804_expanded_subject_catalog.sql` — expands the subject catalogue, adds education-level mappings, category foreign keys, aliases and read-only public catalogue access.
+- `20261028150158_demo_account_isolation.sql` — adds trusted demo-data markers and isolates demo tutors from normal public discovery.
 
 Apply these migrations in timestamp order when setting up another Supabase project. Keep the matching files in `supabase/migrations` synchronized with the remote migration history.
 
 The authenticated API exposes `/users/me` for reading and updating editable profile fields, plus `/users/me/notification-preferences` for managing per-user alert settings. Tutor, booking, messaging, and payment screens still need their persistent data flows connected.
 
 The subjects page and public subject selectors now read the live Supabase catalogue. See [subject catalogue maintenance](supabase/SUBJECT_CATALOG.md) for the model, generated offline snapshot, validation and future additions.
+
+For persistent test students/tutors and linked bookings, conversations, reviews, notifications and simulated payments, see [live demo account data](supabase/LIVE_DEMO_DATA.md). Credentials stay in the ignored `.local/demo-accounts.md`; demo fixtures never run automatically during app startup.
 
 ## Environment variables
 

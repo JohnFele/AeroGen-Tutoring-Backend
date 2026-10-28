@@ -4,7 +4,7 @@ export const me = async (req, res, next) => {
 
     const { data: profile, error } = await req.supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, created_at, updated_at')
+      .select('id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, demo_dataset, created_at, updated_at')
       .eq('id', req.userId)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found' });
@@ -21,6 +21,8 @@ export const me = async (req, res, next) => {
       authProvider: profile.auth_provider,
       bio: profile.bio,
       isVerified: profile.is_verified,
+      isDemo: Boolean(profile.demo_dataset),
+      demoDataset: profile.demo_dataset,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
     };
@@ -34,7 +36,7 @@ export const me = async (req, res, next) => {
   }
 };
 
-const profileSelect = 'id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, created_at, updated_at';
+const profileSelect = 'id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, demo_dataset, created_at, updated_at';
 const profileFieldMap = {
   firstName: 'first_name',
   lastName: 'last_name',
@@ -54,6 +56,8 @@ const serializeProfile = (profile) => ({
   authProvider: profile.auth_provider,
   bio: profile.bio,
   isVerified: profile.is_verified,
+  isDemo: Boolean(profile.demo_dataset),
+  demoDataset: profile.demo_dataset,
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
 });
