@@ -73,3 +73,14 @@ test('student editing permits contact details but rejects roles, emails, markers
  assert.deepEqual(validateStudentEdit(edit({first_name:' Demo ',phone:'+27620882443'})),{first_name:'Demo',phone:'+27620882443'})
  for(const changes of [{role:'tutor'},{email:'other@example.test'},{demo_dataset:null},{is_verified:true},{first_name:''},{phone:'abc'},{bio:'x'.repeat(2001)}])assert.throws(()=>validateStudentEdit(edit(changes)))
 })
+
+test('all fields supplied by the tutor form map to corresponding review columns',()=>{
+ const data={...application,yearsExperience:'3-5',certifications:'Example certification',previousPlatforms:'Example platform',studentsPerSession:'2-4'}
+ const result=applicationRecord(data)
+ for(const[input,column]of Object.entries({firstName:'first_name',lastName:'last_name',email:'contact_email',idNumber:'id_number',phone:'phone',address:'street_address',city:'city',province:'province',highestQualification:'highest_qualification',institution:'institution',certifications:'certifications',previousPlatforms:'previous_platforms',studentAgeGroups:'student_age_groups',teachingStyle:'teaching_style',availability:'availability_slots',teachingMode:'teaching_modes',studentsPerSession:'students_per_session'}))assert.deepEqual(result[column],data[input],input)
+ assert.equal(result.experience_range,'3-5');assert.equal(result.years_experience,3);assert.equal(result.year_completed,2025);assert.equal(result.hourly_rate,250)
+})
+test('invalid optional text types, oversized fields and punctuation-only phones are rejected',async()=>{
+ const{validateApplication}=await import('../src/controllers/site.controller.js')
+ for(const extra of [{certifications:{}},{previousPlatforms:'x'.repeat(1001)},{firstName:'x'.repeat(61)},{phone:'()-------'}])assert.throws(()=>validateApplication({application:{...application,...extra},documents}))
+})

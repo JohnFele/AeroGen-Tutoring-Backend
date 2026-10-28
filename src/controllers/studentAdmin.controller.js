@@ -7,7 +7,7 @@ export function validateStudentEdit(body) {
   const changes = {};
   for (const [field, value] of Object.entries(body.changes)) {
     if (!Object.hasOwn(limits, field) || typeof value !== 'string' || value.length > limits[field] || (['first_name', 'last_name'].includes(field) && !value.trim())) throw new Error('Enter valid student names, contact details and biography. Roles and login emails cannot be changed here.');
-    if (field === 'phone' && value.trim() && !/^\+?[\d\s()-]{9,22}$/.test(value.trim())) throw new Error('Enter a valid phone number with its country code.');
+    if (field === 'phone' && value.trim() && (!/^\+?[\d\s()-]{9,22}$/.test(value.trim())||value.replace(/\D/g,'').length<9||value.replace(/\D/g,'').length>15)) throw new Error('Enter a valid phone number with its country code.');
     changes[field] = value.trim();
   }
   if (!Object.keys(changes).length) throw new Error('Enter at least one profile change.');

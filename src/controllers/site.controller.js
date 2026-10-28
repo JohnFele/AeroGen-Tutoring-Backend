@@ -52,12 +52,14 @@ export const sendEnquiry = (req, res) => {
 export function validateApplication(body) {
   const data = body?.application;
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Complete the tutor application.');
+  const limits={firstName:60,lastName:60,email:254,phone:22,idNumber:100,address:1000,city:160,province:40,highestQualification:250,institution:250,yearCompleted:4,yearsExperience:10,teachingStyle:1000,hourlyRate:10,studentsPerSession:20,previousPlatforms:1000,certifications:1000};
+  for(const [field,max] of Object.entries(limits)){if(data[field]!==undefined&&(typeof data[field]!=='string'||data[field].length>max))throw new Error(`Enter a valid ${field} (up to ${max} characters).`);}
   const required = ['firstName', 'lastName', 'email', 'phone', 'idNumber', 'address', 'city', 'province', 'highestQualification', 'institution', 'yearCompleted', 'yearsExperience', 'teachingStyle', 'hourlyRate'];
   for (const field of required) if (!text(data[field])) throw new Error(`Complete the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
   for (const field of ['subjects', 'studentAgeGroups', 'availability', 'teachingMode']) {
     if (!Array.isArray(data[field]) || !data[field].length || data[field].length > 30 || data[field].some((item) => !text(item, 100))) throw new Error(`Choose your ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}.`);
   }
-  if (!/^\+?[\d\s()-]{9,22}$/.test(data.phone) || !Number.isFinite(Number(data.hourlyRate)) || Number(data.hourlyRate) < 100 || Number(data.hourlyRate) > 1000) throw new Error('Enter a valid phone number and an hourly rate between R100 and R1,000.');
+  if (!/^\+?[\d\s()-]{9,22}$/.test(data.phone) || data.phone.replace(/\D/g,'').length<9 || data.phone.replace(/\D/g,'').length>15 || !Number.isFinite(Number(data.hourlyRate)) || Number(data.hourlyRate) < 100 || Number(data.hourlyRate) > 1000) throw new Error('Enter a valid phone number and an hourly rate between R100 and R1,000.');
   if (!/^\d{4}$/.test(data.yearCompleted) || Number(data.yearCompleted) < 1950 || Number(data.yearCompleted) > new Date().getFullYear()) throw new Error('Enter a valid qualification year.');
   const documents = body.documents;
   if (!Array.isArray(documents) || documents.length < 2 || documents.length > 3) throw new Error('Attach your ID document and qualification certificate.');

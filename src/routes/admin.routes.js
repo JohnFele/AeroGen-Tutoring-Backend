@@ -5,6 +5,7 @@ import { authorize,authorizeRole } from '../middleware/auth.middleware.js';
 import { adminData,listAdminTutors,editAdminTutor,tutorAudit } from '../controllers/tutorAdmin.controller.js';
 const router=Router();
 router.use(authorize,authorizeRole(['admin','superUser']));
+router.use((req,res,next)=>{res.set('Cache-Control','no-store');next();});
 router.get('/data',adminData);
 router.get('/tutors',listAdminTutors);
 router.get('/tutors/:id/audit',tutorAudit);

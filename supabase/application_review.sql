@@ -56,6 +56,7 @@ begin
     or length(coalesce(a.contact_email,'')) not between 3 and 254 or a.contact_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
     or length(btrim(coalesce(a.id_number,''))) not between 1 and 100 or length(btrim(coalesce(a.phone,''))) not between 9 and 22
     or a.province is null or a.phone !~ '^\+?[0-9 ()-]{9,22}$'
+    or length(regexp_replace(a.phone,'[^0-9]','','g')) not between 9 and 15
     or length(btrim(coalesce(a.street_address,''))) not between 1 and 1000 or length(btrim(coalesce(a.city,''))) not between 1 and 160
     or length(btrim(coalesce(a.highest_qualification,''))) not between 1 and 250 or length(btrim(coalesce(a.institution,''))) not between 1 and 250
     or a.year_completed is null or a.year_completed not between 1950 and extract(year from current_date)::int
