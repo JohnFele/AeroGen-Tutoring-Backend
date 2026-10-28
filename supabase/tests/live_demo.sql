@@ -8,8 +8,8 @@ do $$ begin
 end $$;
 set local role anon;
 do $$ begin
-  if exists(select 1 from public.tutor_profiles where demo_dataset is not null) then raise exception 'Demo tutors leaked to public discovery'; end if;
-  if exists(select 1 from public.reviews where body like '[DEMO]%') then raise exception 'Demo reviews leaked to public discovery'; end if;
+  if (select count(*) from public.tutor_directory where demo_dataset is not null) <> 4 then raise exception 'Expected four approved public demo tutors'; end if;
+
 end $$;
 reset role;
 select set_config('request.jwt.claim.sub','de000000-0000-4000-8000-000000000101',true);
@@ -41,7 +41,7 @@ reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000099',true);
 set local role authenticated;
 do $$ begin
-  if exists(select 1 from public.tutor_profiles where demo_dataset is not null) then raise exception 'Demo tutors leaked to non-demo identity'; end if;
+  if (select count(*) from public.tutor_directory where demo_dataset is not null) <> 4 then raise exception 'Approved demo tutors should be public'; end if;
   if exists(select 1 from public.messages) or exists(select 1 from public.bookings) then raise exception 'Unrelated identity can read demo activity'; end if;
 end $$;
 reset role;

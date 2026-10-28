@@ -17,11 +17,13 @@ The Supabase project has the following migrations applied:
 - `20261023162155_catalog_indexes_security.sql` — frontend subject catalog seed data, foreign-key indexes, and restricted trigger-function permissions.
 - `20261023215848_user_profile_settings_update.sql` — lets authenticated users update only their own editable profile columns under RLS.
 - `20261027200804_expanded_subject_catalog.sql` — expands the subject catalogue, adds education-level mappings, category foreign keys, aliases and read-only public catalogue access.
-- `20261028150158_demo_account_isolation.sql` — adds trusted demo-data markers and isolates demo tutors from normal public discovery.
+- `20261028150158_demo_account_isolation.sql` — adds trusted demo-data markers and the initial discovery restrictions.
+- `20261028152900_live_tutor_discovery_and_management.sql` — intentionally publishes approved demo tutors, adds featured profiles, administrator RLS, audited tutor editing and participant-scoped workspace operations.
+- `20261028155253_tutor_edit_conflicts_without_transaction_retries.sql` — returns HTTP 409 for outdated edits without triggering PostgREST serialization retries.
 
 Apply these migrations in timestamp order when setting up another Supabase project. Keep the matching files in `supabase/migrations` synchronized with the remote migration history.
 
-The authenticated API exposes `/users/me` for reading and updating editable profile fields, plus `/users/me/notification-preferences` for managing per-user alert settings. Tutor, booking, messaging, and payment screens still need their persistent data flows connected.
+The authenticated API exposes `/users/me` for reading and updating editable profile fields, plus `/users/me/notification-preferences` for managing per-user alert settings. Tutor management and the account workspace APIs are documented in [tutor management](supabase/TUTOR_MANAGEMENT.md). Booking creation and payment processing still use the existing manual request flow.
 
 The subjects page and public subject selectors now read the live Supabase catalogue. See [subject catalogue maintenance](supabase/SUBJECT_CATALOG.md) for the model, generated offline snapshot, validation and future additions.
 

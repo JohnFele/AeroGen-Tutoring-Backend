@@ -37,15 +37,15 @@ The initial schedule is anchored to **28 October 2026 in Africa/Johannesburg**. 
 
 ## Isolation and frontend integration
 
-`profiles.demo_dataset` and `tutor_profiles.demo_dataset` mark the test cohort. Profile update permissions exclude the marker. The discovery policies allow demo users to see approved tutors in their own dataset while excluding demo tutors from anonymous and non-demo discovery. Pending tutors can read their own tutor profile/subjects but remain undiscoverable to other users. Existing booking/payment/conversation/notification RLS restricts reads to participants/owners.
+`profiles.demo_dataset` and `tutor_profiles.demo_dataset` mark the test cohort. Profile update permissions exclude the marker. The live-directory migration intentionally publishes approved demo tutors to all visitors, at the product owner’s request. The frontend labels these as demo accounts; pending profiles remain private. Pending tutors can read their own tutor profile/subjects but remain undiscoverable to other users. Existing booking/payment/conversation/notification RLS restricts reads to participants/owners.
 
 The `/api/v1/users/me` and profile-update responses now include `isDemo` and `demoDataset`. Use those fields for a future test-account banner and to suppress external side effects. Exclude `profiles.demo_dataset is not null` and `payments.provider = 'demo'` from real business metrics and revenue reporting. Do not route demo payment rows into a live payment provider.
 
-The fixture does not implement missing booking or messaging write endpoints, and it does not replace dashboard localStorage/JavaScript fixtures. The accounts and records are ready to use when those screens are connected. Learning-goal/progress, pricing/subscription, resources and saved-tutor flows still need their own persistent models/API integration where they currently use local mocks.
+Tutor listings, dashboard lessons/calendars, conversations and notifications now use live records. Messaging writes and notification read/delete operations are participant-scoped; no automatic demo replies are generated. Booking requests still use the existing manual enquiry flow. Learning-goal/progress, pricing/subscription, resources and saved-tutor flows still need their own persistent models/API integration where they currently use local mocks.
 
 ## Reproduction and checks
 
-The optional seed is separate from schema migrations and never runs during backend startup or deployment. The schema migration is `20261028150158_demo_account_isolation.sql`. Apply normal migrations first when setting up another project.
+The optional seed is separate from schema migrations and never runs during backend startup or deployment. Apply `20261028150158_demo_account_isolation.sql`, `20261028152900_live_tutor_discovery_and_management.sql` and `20261028155253_tutor_edit_conflicts_without_transaction_retries.sql`. Apply normal migrations first when setting up another project.
 
 ```powershell
 node scripts/generate-demo-fixture.mjs
