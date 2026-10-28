@@ -1,3 +1,5 @@
+import { listApplications, reviewApplication, applicationDocument } from '../controllers/application.controller.js';
+import { listStudents, studentDetails, editStudent } from '../controllers/studentAdmin.controller.js';
 import { Router } from 'express';
 import { authorize,authorizeRole } from '../middleware/auth.middleware.js';
 import { adminData,listAdminTutors,editAdminTutor,tutorAudit } from '../controllers/tutorAdmin.controller.js';
@@ -7,4 +9,10 @@ router.get('/data',adminData);
 router.get('/tutors',listAdminTutors);
 router.get('/tutors/:id/audit',tutorAudit);
 router.patch('/tutors/:id',editAdminTutor);
+router.get('/applications', listApplications);
+router.patch('/applications/:id/review', reviewApplication);
+router.get('/applications/:id/documents/:documentId', applicationDocument);
+router.get('/students', listStudents);
+router.get('/students/:id', studentDetails);
+router.patch('/students/:id', editStudent);
 export default router;

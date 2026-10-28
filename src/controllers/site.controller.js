@@ -82,17 +82,3 @@ export function validateApplication(body) {
   const message = allowedFields.map((field) => `${field.replace(/([A-Z])/g, ' $1')}: ${Array.isArray(data[field]) ? data[field].join(', ') : text(data[field])}`).join('\n');
   return { name: `${data.firstName.trim()} ${data.lastName.trim()}`.slice(0, 120), email: data.email, message, attachments };
 }
-
-export const sendTutorApplication = (req, res) => {
-  try {
-    const application = validateApplication(req.body);
-    req.body = { name: application.name, email: application.email, topic: 'Other', message: `Tutor application\nAccount: ${req.userId}\n\n${application.message}` };
-    req.siteAttachments = application.attachments;
-    req.siteMessageLimit = 12000;
-    req.siteSubject = '[AeroGen] Tutor application';
-    req.siteSuccessMessage = 'Your tutor application and documents were sent to the AeroGen team for review.';
-    return sendSupportRequest(req, res);
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-};

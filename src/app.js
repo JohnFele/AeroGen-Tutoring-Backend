@@ -11,7 +11,7 @@ const app = express();
 
 app.use(helmet());
 app.use(cors(corsOptions));
-app.use('/api/v1/site/tutor-applications', applicationLimiter, authorize, express.json({ limit: '28mb' }));
+app.post('/api/v1/site/tutor-applications', applicationLimiter, authorize, express.json({ limit: '28mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(generalLimiter);

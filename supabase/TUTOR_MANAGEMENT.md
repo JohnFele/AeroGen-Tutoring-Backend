@@ -34,3 +34,5 @@ The two workspace RPCs use definer access to project counterpart names hidden by
 Run `supabase/tests/tutor_management.sql` and `supabase/tests/live_demo.sql` inside `BEGIN ... ROLLBACK` using the SQL connector. Checks cover admin edits reflected in the public view, audit history, stale edits, invalid subjects, approval/unapproval, private workspace scopes and denied cross-conversation sends. The browser checks used real public directory reads and mocked admin transport; a separate real admin HTTP check verified listing, profile joins, saved featured state, anonymous visibility, conflict rejection and audit reads, then restored the demo tutor's original featured flag.
 
 Deploy backend and frontend together. The connected Supabase migrations are already applied. New project setups must apply all migrations in timestamp order. No new environment variables or dependencies are required.
+
+For the new application-review and student management pages, see [pending application-review activation](APPLICATION_REVIEW.md). The existing tutor directory migrations above remain applied; the separate application-review SQL was declined and is not applied.
