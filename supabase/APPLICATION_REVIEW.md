@@ -2,6 +2,8 @@
 
 ## Activation status: pending database approval
 
+On 29 October, the user's pasted script and the local file revealed that all three PL/pgSQL closing delimiters were still truncated to `end; $;`. They are now corrected to `end; $$;`, with a regression check for matching function delimiters. The earlier correction described below was incomplete. Read-only inspection still shows no review function, review table or new application columns; the corrected script needs execution and database verification.
+
 The initial migration attempts were declined or returned `McpServerError: Invalid or expired requestState`. On an explicitly approved retry, Supabase reached SQL execution and reported `42601: syntax error at end of input`. The prepared script was corrected: PL/pgSQL function bodies now end with `end;`, and the document-size CASE expression is parenthesized. Re-applying the corrected script again returned `Invalid or expired requestState`, including a fresh longer-lived request. Read-only verification confirms that no application-review functions/table/columns were applied. **The SQL in `supabase/application_review.sql` remains pending and has not been executed successfully.**
 
 The UI, backend handlers, validation and tests are ready. Student read endpoints were verified with a real admin account. Submission was verified to return 503 before uploading anything when required schema fields are absent. Full live submission, private-document signing, approval, role promotion, review history and student updates remain unverified and unavailable until the SQL is applied.

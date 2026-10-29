@@ -94,7 +94,7 @@ begin
     select p.id,'application','New tutor application',a.first_name||' '||a.last_name||' submitted a tutor application.',jsonb_build_object('tab','applications','applicationId',_id)
     from public.profiles p where p.role in ('admin','superUser');
   return _id;
-end; $;
+end; $$;
 revoke all on function private.submit_tutor_application(uuid,jsonb,bigint[],jsonb) from public,anon;
 grant execute on function private.submit_tutor_application(uuid,jsonb,bigint[],jsonb) to authenticated;
 create function public.submit_tutor_application(_id uuid,_data jsonb,_subjects bigint[],_documents jsonb)
@@ -137,7 +137,7 @@ begin
   insert into public.tutor_application_reviews(application_id,reviewer_id,previous_status,status,notes) values(_id,(select auth.uid()),a.status,_status,coalesce(_notes,''));
   insert into public.notifications(user_id,kind,title,body,data) values(a.user_id,'application','Tutor application update',case _status when 'approved' then 'Your tutor application was approved. Sign in again to open your tutor dashboard.' when 'rejected' then 'Your tutor application was not approved. View the review notes in your application.' else 'Your tutor application is being reviewed.' end,jsonb_build_object('applicationId',_id,'path','/tutor-application-form'));
   return a.user_id;
-end; $;
+end; $$;
 revoke all on function private.review_tutor_application(uuid,text,text,timestamptz) from public,anon;
 grant execute on function private.review_tutor_application(uuid,text,text,timestamptz) to authenticated;
 create function public.review_tutor_application(_id uuid,_status text,_notes text,_expected_updated_at timestamptz)
@@ -164,7 +164,7 @@ begin
     or length(coalesce(edited.phone,''))>22 or (coalesce(edited.phone,'')<>'' and edited.phone !~ '^\+?[0-9 ()-]{9,22}$') or length(coalesce(edited.location,''))>200 or length(coalesce(edited.bio,''))>2000 then raise exception 'Enter valid student profile details' using errcode='22023'; end if;
   update public.profiles set first_name=edited.first_name,last_name=edited.last_name,phone=edited.phone,location=edited.location,bio=edited.bio where id=_id;
   return _id;
-end; $;
+end; $$;
 revoke all on function public.admin_update_student(uuid,jsonb,timestamptz) from public,anon;
 grant execute on function public.admin_update_student(uuid,jsonb,timestamptz) to authenticated;
 notify pgrst,'reload schema';

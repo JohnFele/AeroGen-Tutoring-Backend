@@ -1,7 +1,20 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { submitApplication, applicationRecord, reviewApplication } from '../src/controllers/application.controller.js'
 import { validateStudentEdit } from '../src/controllers/studentAdmin.controller.js'
+
+test('pending application migration closes every dollar-quoted function body', async () => {
+  const sql = await readFile(new URL('../supabase/application_review.sql', import.meta.url), 'utf8')
+  const definitions = [...sql.matchAll(/create function\s+([\w.]+)\([^]*?\bas\s+\$\$([^]*?)\$\$;/gi)]
+  const declaredCount = [...sql.matchAll(/create function\s/gi)].length
+  assert.equal(declaredCount, 5)
+  assert.equal(definitions.length, declaredCount, 'Each function must have matching $$ delimiters')
+  for (const [definition, name, body] of definitions) {
+    assert(!/^end;?\s+\$;\s*$/m.test(definition), `${name} contains a truncated delimiter`)
+    if (/language plpgsql/i.test(definition)) assert.match(body.trim(), /end;$/i, `${name} must end its PL/pgSQL block`)
+  }
+})
 
 const id = 'cf000000-0000-4000-8000-000000000001'
 const userId = 'de000000-0000-4000-8000-000000000106'
