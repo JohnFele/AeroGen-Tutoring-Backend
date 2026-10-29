@@ -4,7 +4,9 @@ import http from 'node:http'
 
 process.env.BREVO_API_KEY = 'xkeysib-test-only-not-a-real-key';
 process.env.BREVO_SENDER_EMAIL = 'sender@example.test';
-const { sendEnquiry, validateApplication } = await import('../src/controllers/site.controller.js');
+const { validateApplication } = await import('../src/controllers/site.controller.js');
+const {createEnquiryHandler}=await import('../src/controllers/siteAdmin.controller.js');
+const sendEnquiry=createEnquiryHandler({getClient:()=>({rpc:async(name,args)=>({data:{id:args._id,created:true}})}),getContact:async()=>({email:'aerogentutoring@gmail.com'})});
 const pdf = Buffer.from('%PDF-1.4\nDemonstration document for automated checks only.').toString('base64');
 const application = { firstName: 'Demo', lastName: 'Tutor', email: 'demo@example.test', phone: '0620882443', idNumber: 'test-id-only', address: 'Example', city: 'Johannesburg', province: 'Gauteng', highestQualification: 'Bachelors', institution: 'Example college', yearCompleted: '2025', yearsExperience: '1-2', teachingStyle: 'Explain, practise and check understanding.', hourlyRate: '250', subjects: ['Mathematics'], studentAgeGroups: ['High school'], availability: ['Weekday Evenings'], teachingMode: ['online'] };
 const documents = [{ kind: 'idDocument', name: 'id.pdf', content: pdf }, { kind: 'qualificationDocument', name: 'degree.pdf', content: pdf }];
@@ -38,13 +40,13 @@ test('enquiry email goes only to the fixed business recipient and escapes user H
     assert.equal(res.code, 202); assert.equal(payload.to[0].email, 'aerogentutoring@gmail.com'); assert.equal(payload.replyTo.email, 'demo@example.test'); assert(payload.htmlContent.includes('&lt;script&gt;')); assert(!payload.htmlContent.includes('<script>'));
   } finally { globalThis.fetch = previous; }
 });
-test('enquiry provider failure never reports delivery success', async () => {
+test('enquiry survives provider failure without claiming email delivery', async () => {
   const previous = globalThis.fetch;
   let payload;
   globalThis.fetch = async (url, options) => { payload = JSON.parse(options.body); return { ok: true }; };
   try {
     globalThis.fetch = async () => ({ ok: false, status: 503, text: async () => 'Provider unavailable (mock)' });
-    const failed = response(); await sendEnquiry({ body: { firstName: 'Demo', lastName: 'User', email: 'demo@example.test', category: 'general', message: 'A useful enquiry message.' } }, failed); assert.equal(failed.code, 502);
+    const failed = response(); await sendEnquiry({ body: { firstName: 'Demo', lastName: 'User', email: 'demo@example.test', category: 'general', message: 'A useful enquiry message.' } }, failed); assert.equal(failed.code, 202); assert(failed.body.reference); assert(!failed.body.message.includes('email was sent'));
   } finally { globalThis.fetch = previous; }
 });
 

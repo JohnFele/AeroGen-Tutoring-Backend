@@ -2,7 +2,6 @@ import { decodeApplicationFile } from './applicationFiles.js';
 import { sendSupportRequest } from './support.controller.js';
 import { educationLevels } from '../data/subjectCatalog.js';
 
-const categories = new Set(['general', 'tutoring', 'billing', 'technical', 'partnership', 'careers', 'talent', 'other']);
 const text = (value, max = 1000) => typeof value === 'string' && value.trim().length <= max ? value.trim() : '';
 
 export const sendSubjectRequest = (req, res) => {
@@ -39,16 +38,7 @@ export const sendSubjectRequest = (req, res) => {
   return sendSupportRequest(req, res);
 };
 
-export const sendEnquiry = (req, res) => {
-  const { firstName, lastName, email, category, message, website } = req.body || {};
-  if (website) return res.status(400).json({ message: 'Unable to submit this enquiry.' });
-  if (!text(firstName, 60) || !text(lastName, 60) || !categories.has(category)) return res.status(400).json({ message: 'Enter your name and select an enquiry subject.' });
-  if (typeof message !== 'string' || message.trim().length < 10 || message.length > 3500) return res.status(400).json({ message: 'Enter a message between 10 and 3500 characters.' });
-  req.body = { name: `${firstName.trim()} ${lastName.trim()}`.slice(0, 120), email, topic: 'Other', message: `Website enquiry · ${category}\n\n${message.trim()}` };
-  req.siteSubject = `[AeroGen Enquiry] ${category}`;
-  req.siteSuccessMessage = 'Your enquiry was sent to AeroGen Tutoring. We will reply by email.';
-  return sendSupportRequest(req, res);
-};
+export { receiveEnquiry as sendEnquiry } from './siteAdmin.controller.js';
 
 export function validateApplication(body) {
   const data = body?.application;

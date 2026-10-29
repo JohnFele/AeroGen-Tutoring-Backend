@@ -4,8 +4,11 @@ import { authorize } from '../middleware/auth.middleware.js';
 import { Router } from 'express';
 import { sendEnquiry, sendSubjectRequest } from '../controllers/site.controller.js';
 import { supportLimiter } from '../middleware/rateLimit.middleware.js';
+import { publicContact,publicOpenings } from '../controllers/siteAdmin.controller.js';
 
 const router = Router();
+router.get('/contact-details', publicContact);
+router.get('/openings', publicOpenings);
 router.post('/enquiries', supportLimiter, sendEnquiry);
 router.post('/subject-requests', supportLimiter, sendSubjectRequest);
 // Authentication and the larger, rate-limited JSON parser are installed before the global parser in app.js.

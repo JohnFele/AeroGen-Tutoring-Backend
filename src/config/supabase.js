@@ -15,3 +15,10 @@ export const createUserSupabaseClient = (accessToken) => {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 };
+
+export const createPublicSupabaseClient = () => {
+  assertSupabaseConfigured();
+  return createClient(ENV.SUPABASE_URL, ENV.SUPABASE_PUBLISHABLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+};
