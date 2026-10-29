@@ -1,14 +1,12 @@
 # Application review and student management
 
-## Activation status: pending database approval
+## Activation status: applied manually; full flow verification pending
 
-On 29 October, the user's pasted script and the local file revealed that all three PL/pgSQL closing delimiters were still truncated to `end; $;`. They are now corrected to `end; $$;`, with a regression check for matching function delimiters. The earlier correction described below was incomplete. Read-only inspection still shows no review function, review table or new application columns; the corrected script needs execution and database verification.
+The user applied the corrected SQL in the SQL Editor on 29 October 2026. Read-only verification confirms the review table, new application columns and submission/review functions exist. Do not re-run the creation script. Earlier connector denials/expired request states and malformed dollar-quoted function endings prevented execution; those earlier failures no longer describe the live schema.
 
-The initial migration attempts were declined or returned `McpServerError: Invalid or expired requestState`. On an explicitly approved retry, Supabase reached SQL execution and reported `42601: syntax error at end of input`. The prepared script was corrected: PL/pgSQL function bodies now end with `end;`, and the document-size CASE expression is parenthesized. Re-applying the corrected script again returned `Invalid or expired requestState`, including a fresh longer-lived request. Read-only verification confirms that no application-review functions/table/columns were applied. **The SQL in `supabase/application_review.sql` remains pending and has not been executed successfully.**
+The frontend, backend handlers and automated tests are implemented. Student read endpoints and the earlier missing-schema upload guard were tested with real accounts. Full live submission, private-document signing, approval, role promotion, review history and student updates still need end-to-end verification against the now-active schema.
 
-The UI, backend handlers, validation and tests are ready. Student read endpoints were verified with a real admin account. Submission was verified to return 503 before uploading anything when required schema fields are absent. Full live submission, private-document signing, approval, role promotion, review history and student updates remain unverified and unavailable until the SQL is applied.
-
-Apply the reviewed SQL once through an approved Supabase migration operation or the project's SQL Editor. Then reconcile local/remote migration history using the project's Supabase CLI workflow; do not claim this file is already an applied migration or invent a version number. Run the transaction-only database checks in `supabase/tests/application_review.sql`, check security advisors, then perform the live HTTP/application tests below before deploying both repositories.
+The manual SQL Editor execution did not register a Supabase migration-history entry. Reconcile local/remote history using the project's Supabase CLI workflow before a future automated database deployment; do not invent a version number. Run the transaction-only checks in `supabase/tests/application_review.sql`, then the live HTTP checks below. The separate tutor-discovery migrations are registered normally.
 
 ## User flow
 
