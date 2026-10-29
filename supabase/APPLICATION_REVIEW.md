@@ -4,7 +4,7 @@
 
 The user applied the corrected SQL in the SQL Editor on 29 October 2026. Read-only verification confirms the review table, new application columns and submission/review functions exist. Do not re-run the creation script. Earlier connector denials/expired request states and malformed dollar-quoted function endings prevented execution; those earlier failures no longer describe the live schema.
 
-The frontend, backend handlers and automated tests are implemented. Student read endpoints and the earlier missing-schema upload guard were tested with real accounts. Full live submission, private-document signing, approval, role promotion, review history and student updates still need end-to-end verification against the now-active schema.
+The frontend, backend handlers and automated tests are implemented. Student read endpoints and the earlier missing-schema upload guard were tested with real accounts. Live submission with private PDFs, saved-draft document reuse and idempotent submission retries have also passed; see [account drafts](APPLICATION_DRAFTS.md). Admin private-document signing, approval, role promotion, review history and student updates still need end-to-end verification against the now-active schema.
 
 The manual SQL Editor execution did not register a Supabase migration-history entry. Reconcile local/remote history using the project's Supabase CLI workflow before a future automated database deployment; do not invent a version number. Run the transaction-only checks in `supabase/tests/application_review.sql`, then the live HTTP checks below. The separate tutor-discovery migrations are registered normally.
 

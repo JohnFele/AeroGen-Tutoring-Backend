@@ -1,3 +1,4 @@
+import { cleanSubmittedDraftFiles } from './applicationDraft.controller.js';
 import { randomUUID } from 'node:crypto';
 import { validateApplication } from './site.controller.js';
 
@@ -49,7 +50,7 @@ export const submitApplication = async (req, res, next) => {
   try {
     const { data: existing, error: existingError } = await req.supabase.from('tutor_applications').select('id,status,first_name,experience_range').eq('id', id).eq('user_id', req.userId).maybeSingle();
     if (existingError) throw existingError;
-    if (existing) return res.status(200).json({ message: 'Your application is already saved in the review portal.', applicationId: existing.id, status: existing.status });
+    if (existing) { await cleanSubmittedDraftFiles(req); return res.status(200).json({ message: 'Your application is already saved in the review portal.', applicationId: existing.id, status: existing.status }); }
     const { data: open, error: openError } = await req.supabase.from('tutor_applications').select('id').eq('user_id', req.userId).in('status', ['submitted', 'under_review']).limit(1);
     if (openError) throw openError;
     if (open.length) return res.status(409).json({ message: 'You already have an application awaiting review. Reload to see its status.' });
@@ -69,15 +70,16 @@ export const submitApplication = async (req, res, next) => {
       uploaded.push(path);
       documents.push({ document_type: { idDocument: 'identity', qualificationDocument: 'qualification', resume: 'resume' }[input.kind], storage_path: path, original_filename: input.name, mime_type: mime, size_bytes: bytes.length });
     }
-    const { data, error } = await req.supabase.rpc('submit_tutor_application', { _id: id, _data: record, _subjects: subjects.map(subject => subject.id), _documents: documents }).abortSignal(AbortSignal.timeout(15000));
+    const { data, error } = await req.supabase.rpc(req.applicationDraft?'submit_tutor_application_draft':'submit_tutor_application', { _id: id, _data: record, _subjects: subjects.map(subject => subject.id), _documents: documents, ...(req.applicationDraft?{_draft_version:req.applicationDraft.version}:{}) }).abortSignal(AbortSignal.timeout(15000));
     if (error) throw error;
     stored = true;
+    await cleanSubmittedDraftFiles(req);
     return res.status(201).json({ message: 'Your application and private documents have been saved. The AeroGen team will review them in the admin portal.', applicationId: data, status: 'submitted' });
   } catch (error) {
     // An interrupted response can occur after commit. Confirm before removing uploads.
     if (uploaded.length) {
       const { data } = await req.supabase.from('tutor_applications').select('id').eq('id', id).eq('user_id', req.userId).maybeSingle();
-      if (data) { stored = true; return res.status(200).json({ message: 'Your application is saved in the review portal.', applicationId: id, status: 'submitted' }); }
+      if (data) { stored = true; await cleanSubmittedDraftFiles(req); return res.status(200).json({ message: 'Your application is saved in the review portal.', applicationId: id, status: 'submitted' }); }
     }
     if (databaseIssue(res, error)) return;
     return next(error);

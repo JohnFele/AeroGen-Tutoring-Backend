@@ -1,3 +1,4 @@
+import { decodeApplicationFile } from './applicationFiles.js';
 import { sendSupportRequest } from './support.controller.js';
 import { educationLevels } from '../data/subjectCatalog.js';
 
@@ -67,17 +68,8 @@ export function validateApplication(body) {
   const attachments = documents.map((file) => {
     if (!['idDocument', 'qualificationDocument', 'resume'].includes(file?.kind) || seen.has(file.kind)) throw new Error('Choose one file for each document type.');
     seen.add(file.kind);
-    const maxBytes = (file.kind === 'qualificationDocument' ? 10 : 5) * 1024 * 1024;
-    if (typeof file.content !== 'string' || file.content.length > Math.ceil(maxBytes / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(file.content)) throw new Error('A document is invalid or exceeds its size limit.');
-    const bytes = Buffer.from(file.content, 'base64');
-    if (!bytes.length || bytes.length > maxBytes || bytes.toString('base64') !== file.content) throw new Error('A document is invalid or exceeds its size limit.');
-    const name = text(file.name, 120).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const pdf = /\.pdf$/i.test(name) && bytes.subarray(0, 5).toString() === '%PDF-';
-    const png = /\.png$/i.test(name) && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-    const jpg = /\.jpe?g$/i.test(name) && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
-    const docx = file.kind === 'resume' && /\.docx$/i.test(name) && bytes.subarray(0, 2).toString() === 'PK' && bytes.includes(Buffer.from('word/'));
-    if (!(pdf || png || jpg || docx)) throw new Error('Use PDF, JPG or PNG documents, or DOCX for your CV. File content must match its extension.');
-    return { name: `${file.kind}-${name}`, content: file.content };
+    const decoded=decodeApplicationFile(file);
+    return { name: decoded.uploadName, content: file.content };
   });
   if (!seen.has('idDocument') || !seen.has('qualificationDocument')) throw new Error('Attach your ID document and qualification certificate.');
   const allowedFields = [...required, 'subjects', 'studentAgeGroups', 'availability', 'teachingMode', 'studentsPerSession', 'previousPlatforms', 'certifications'];
