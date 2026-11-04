@@ -6,8 +6,10 @@ import { sendEnquiry, sendSubjectRequest } from '../controllers/site.controller.
 import { supportLimiter } from '../middleware/rateLimit.middleware.js';
 import { publicContact,publicOpenings } from '../controllers/siteAdmin.controller.js';
 import {publicFaqs} from '../controllers/faq.controller.js';
+import{publicPlatformSettings}from'../controllers/platformSettings.controller.js';
 
 const router = Router();
+router.get('/platform-settings',publicPlatformSettings);
 router.get('/contact-details', publicContact);
 router.get('/openings', publicOpenings);
 router.get('/faqs',publicFaqs);

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { submitApplication, applicationRecord, reviewApplication } from '../src/controllers/application.controller.js'
+import { createSubmitApplication, applicationRecord, reviewApplication } from '../src/controllers/application.controller.js'
 import { validateStudentEdit } from '../src/controllers/studentAdmin.controller.js'
 
 test('pending application migration closes every dollar-quoted function body', async () => {
@@ -16,6 +16,7 @@ test('pending application migration closes every dollar-quoted function body', a
   }
 })
 
+const submitApplication=createSubmitApplication({notifyAdmins:async()=>({skipped:true})});
 const id = 'cf000000-0000-4000-8000-000000000001'
 const userId = 'de000000-0000-4000-8000-000000000106'
 const pdf = Buffer.from('%PDF-1.4\nFictional verification document.').toString('base64')
@@ -46,14 +47,17 @@ test('application projection retains declared range and cannot include approval 
   assert.throws(()=>applicationRecord({...application,province:'Invalid Province'}));assert.throws(()=>applicationRecord({...application,email:'invalid'}));assert.throws(()=>applicationRecord({...application,yearsExperience:'many'}))
 })
 test('successful submission uploads private documents then saves one atomic application',async()=>{
- const {supabase,calls}=client();const res=response();await submitApplication(request(supabase),res,fail)
+ const notices=[];const handler=createSubmitApplication({notifyAdmins:async notice=>{notices.push(notice);return{status:202}}});
+ const {supabase,calls}=client();const res=response();await handler(request(supabase),res,fail)
  assert.equal(res.code,201);assert.equal(res.body.applicationId,id)
+ assert.deepEqual(notices,[{id,application}])
  const uploads=calls.filter(call=>call[0]==='upload');assert.equal(uploads.length,2)
  assert(uploads.every(call=>call[1].startsWith(userId+'/'+id+'/')&&call[3].upsert===false))
  const rpc=calls.find(call=>call[0]==='rpc');assert.equal(rpc[1],'submit_tutor_application');assert.equal(rpc[2]._documents[0].document_type,'identity');assert.deepEqual(rpc[2]._subjects,[1]);assert(!calls.some(call=>call[0]==='remove'))
 })
 test('retrying a committed submission returns the saved ID without uploading again',async()=>{
- const {supabase,calls}=client({reads:[{data:{id,status:'submitted'}}]});const res=response();await submitApplication(request(supabase),res,fail)
+ const handler=createSubmitApplication({notifyAdmins:async()=>assert.fail('An application retry must not email again')});
+ const {supabase,calls}=client({reads:[{data:{id,status:'submitted'}}]});const res=response();await handler(request(supabase),res,fail)
  assert.equal(res.code,200);assert(!calls.some(call=>['rpc','upload'].includes(call[0])))
 })
 test('a duplicate open application or unknown subject never uploads files',async()=>{

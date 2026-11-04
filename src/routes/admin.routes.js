@@ -6,10 +6,13 @@ import { adminData,listAdminTutors,editAdminTutor,tutorAudit } from '../controll
 import { adminContact,saveContact,listOpenings,saveOpening,deleteOpening,listEnquiries,enquiryDetails,updateEnquiry,replyToEnquiry } from '../controllers/siteAdmin.controller.js';
 import { supportLimiter } from '../middleware/rateLimit.middleware.js';
 import {listFaqs,saveFaq,deleteFaq} from '../controllers/faq.controller.js';
+import{adminPlatformSettings,savePlatformSettings}from'../controllers/platformSettings.controller.js';
 const router=Router();
 router.use(authorize,authorizeRole(['admin','superUser']));
 router.use((req,res,next)=>{res.set('Cache-Control','no-store');next();});
 router.get('/data',adminData);
+router.get('/platform-settings',adminPlatformSettings);
+router.put('/platform-settings',savePlatformSettings);
 router.get('/tutors',listAdminTutors);
 router.get('/tutors/:id/audit',tutorAudit);
 router.patch('/tutors/:id',editAdminTutor);

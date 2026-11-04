@@ -18,14 +18,14 @@ test('contact submissions require valid email, bounded text and an idempotency U
 test('enquiries persist before email, remain accepted during delivery failure and do not resend duplicates',async()=>{
   const order=[];let created=true;
   const client={rpc:async(name,args)=>{order.push('store');assert.equal(name,'submit_contact_enquiry');assert.equal(args._id,id);return{data:{id,created},error:null}}};
-  const handler=createEnquiryHandler({getClient:()=>client,getContact:async()=>contact,deliver:async()=>{order.push('email');return{status:502,message:'Provider failed'}}});
+  const handler=createEnquiryHandler({getClient:()=>client,getContact:async()=>contact,getPlatform:async()=>({notifications:true}),deliver:async()=>{order.push('email');return{status:502,message:'Provider failed'}}});
   const req={body:{id,firstName:'Demo',lastName:'User',email:'demo@example.test',category:'general',message:'A useful enquiry message.'}};
   const res=response();await handler(req,res,assert.ifError);assert.equal(res.code,202);assert.equal(res.body.reference,id);assert(!res.body.message.includes('email was sent'));assert.deepEqual(order,['store','email']);
   created=false;await handler(req,response(),assert.ifError);assert.deepEqual(order,['store','email','store']);
 });
 test('database failures never notify email or claim an enquiry was received',async()=>{
   let mailed=false;
-  const handler=createEnquiryHandler({getClient:()=>({rpc:async()=>({error:{code:'42P01'}})}),getContact:async()=>contact,deliver:async()=>{mailed=true}});
+  const handler=createEnquiryHandler({getClient:()=>({rpc:async()=>({error:{code:'42P01'}})}),getContact:async()=>contact,getPlatform:async()=>({notifications:true}),deliver:async()=>{mailed=true}});
   const res=response();await handler({body:{id,firstName:'Demo',lastName:'User',email:'demo@example.test',category:'general',message:'A useful enquiry message.'}},res,assert.ifError);
   assert.equal(res.code,503);assert.equal(mailed,false);
 });

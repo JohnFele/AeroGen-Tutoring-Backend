@@ -1,3 +1,4 @@
+import{readPlatformSettings}from'../services/platformSettings.js';
 import {randomUUID} from 'node:crypto';
 import {createPublicSupabaseClient} from '../config/supabase.js';
 import {deliverSupportEmail} from './support.controller.js';
@@ -49,15 +50,18 @@ export const publicOpenings=async(req,res,next)=>{try{
   for(let offset=0;;offset+=500){const{data,error}=await client.from('career_openings').select('id,title,department,employment_type,location,salary,description,requirements,closes_on,created_at').order('created_at',{ascending:false}).order('id').range(offset,offset+499).abortSignal(timeout());if(error)throw error;openings.push(...data);if(data.length<500)break}
   res.set('Cache-Control','no-store');return res.json({openings});
 }catch(error){if(!siteError(res,error))next(error)}};
-export function createEnquiryHandler({getClient=createPublicSupabaseClient,getContact=contactFrom,deliver=deliverSupportEmail}={}){
+export function createEnquiryHandler({getClient=createPublicSupabaseClient,getContact=contactFrom,getPlatform=readPlatformSettings,deliver=deliverSupportEmail}={}){
   return async(req,res,next)=>{
     let input;try{input=validateEnquiry(req.body)}catch(error){return res.status(400).json({message:error.message})}
     try{
       const client=getClient();const{data,error}=await client.rpc('submit_contact_enquiry',{_id:input.id,_first_name:input.firstName,_last_name:input.lastName,_email:input.email,_category:input.category,_message:input.message});if(error)throw error;
       if(data.created){try{
+        const platform=await getPlatform(client);
+        if(platform.notifications){
         const contact=await getContact(client);
-        const delivered=await deliver({name:`${input.firstName} ${input.lastName}`,email:input.email,topic:'Other',message:`Website enquiry · ${input.category}\nReference: ${data.id}\n\n${input.message}`},{recipient:contact.email,siteSubject:`[AeroGen Enquiry] ${input.category}`,title:'Website enquiry'});
+        const delivered=await deliver({name:`${input.firstName} ${input.lastName}`.slice(0,120),email:input.email,topic:'Other',message:`Website enquiry · ${input.category}\nReference: ${data.id}\n\n${input.message}`},{recipient:contact.email,siteSubject:`[AeroGen Enquiry] ${input.category}`,title:'Website enquiry'});
         if(delivered.status!==202)console.error('Enquiry saved; email notification could not be delivered.');
+        }
       }catch{console.error('Enquiry saved; email notification is unavailable.')}}
       return res.status(202).json({reference:data.id,message:'Your enquiry has been received by AeroGen Tutoring. We will reply by email. Keep this reference: '+data.id});
     }catch(error){if(!siteError(res,error))return next(error)}

@@ -60,7 +60,7 @@ export const saveDraft=async(req,res,next)=>{
     await removeFiles(req,(previous?.documents||[]).filter(file=>!docs.some(item=>item.path===file.path)).map(file=>file.path));
     return res.json({draft:publicDraft(data)});
   }catch(error){
-    safeToClean=!rpcAttempted||['PT409','42501','22023','22P02','23505','23514','PGRST202','PGRST204','42P01'].includes(error.code);
+    safeToClean=!rpcAttempted||['PT409','PT503','PT403','42501','22023','22P02','23505','23514','PGRST202','PGRST204','42P01'].includes(error.code);
     // A response can be lost after commit: retain files referenced by the saved row.
     try{const saved=await readOwnDraft(req);if(saved?.save_id===body.saveId){committed=true;return res.json({draft:publicDraft(saved)});}}catch{/* Preserve the original provider error. */}
     if(!draftError(res,error))return next(error);

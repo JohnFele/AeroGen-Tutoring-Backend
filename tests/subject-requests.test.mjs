@@ -59,7 +59,7 @@ test('provider failures return an error without claiming delivery', async () => 
 })
 
 test('public subject request route sends a validated module request without requiring sign-in', async () => {
-  const { default: app } = await import('../src/app.js')
+  const {createApp} = await import('../src/app.js');const app=createApp({platformGate:(req,res,next)=>{req.platformSettings={applications:true,maintenance:false};next()}})
   const server = app.listen(0, '127.0.0.1')
   await new Promise(resolve => server.once('listening', resolve))
   const previous = globalThis.fetch

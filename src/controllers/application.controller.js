@@ -1,3 +1,4 @@
+import {notifyApplicationAdmins} from '../services/adminNotifications.js';
 import { cleanSubmittedDraftFiles } from './applicationDraft.controller.js';
 import { randomUUID } from 'node:crypto';
 import { validateApplication } from './site.controller.js';
@@ -39,7 +40,7 @@ export const currentApplication = async (req, res, next) => {
     return res.json({ application: data });
   } catch (error) { return next(error); }
 };
-export const submitApplication = async (req, res, next) => {
+export const createSubmitApplication = ({notifyAdmins=notifyApplicationAdmins}={}) => async (req, res, next) => {
   let record, validated;
   const id = req.body?.submissionId || randomUUID();
   if (!uuid.test(id)) return res.status(400).json({ message: 'Invalid submission reference. Reload the form.' });
@@ -74,6 +75,7 @@ export const submitApplication = async (req, res, next) => {
     if (error) throw error;
     stored = true;
     await cleanSubmittedDraftFiles(req);
+    await notifyAdmins({id,application:req.body.application});
     return res.status(201).json({ message: 'Your application and private documents have been saved. The AeroGen team will review them in the admin portal.', applicationId: data, status: 'submitted' });
   } catch (error) {
     // An interrupted response can occur after commit. Confirm before removing uploads.
@@ -90,6 +92,8 @@ export const submitApplication = async (req, res, next) => {
     }
   }
 };
+
+export const submitApplication=createSubmitApplication();
 
 export const applicationColumns = '*,profiles!tutor_applications_user_id_fkey(id,first_name,last_name,email,role,demo_dataset),tutor_application_subjects(subjects(id,name)),tutor_application_documents(id,document_type,original_filename,mime_type,size_bytes),tutor_application_reviews(id,status,previous_status,notes,created_at)';
 export const listApplications = async (req, res, next) => {

@@ -6,7 +6,7 @@ process.env.BREVO_API_KEY = 'xkeysib-test-only-not-a-real-key';
 process.env.BREVO_SENDER_EMAIL = 'sender@example.test';
 const { validateApplication } = await import('../src/controllers/site.controller.js');
 const {createEnquiryHandler}=await import('../src/controllers/siteAdmin.controller.js');
-const sendEnquiry=createEnquiryHandler({getClient:()=>({rpc:async(name,args)=>({data:{id:args._id,created:true}})}),getContact:async()=>({email:'aerogentutoring@gmail.com'})});
+const sendEnquiry=createEnquiryHandler({getClient:()=>({rpc:async(name,args)=>({data:{id:args._id,created:true}})}),getContact:async()=>({email:'aerogentutoring@gmail.com'}),getPlatform:async()=>({notifications:true})});
 const pdf = Buffer.from('%PDF-1.4\nDemonstration document for automated checks only.').toString('base64');
 const application = { firstName: 'Demo', lastName: 'Tutor', email: 'demo@example.test', phone: '0620882443', idNumber: 'test-id-only', address: 'Example', city: 'Johannesburg', province: 'Gauteng', highestQualification: 'Bachelors', institution: 'Example college', yearCompleted: '2025', yearsExperience: '1-2', teachingStyle: 'Explain, practise and check understanding.', hourlyRate: '250', subjects: ['Mathematics'], studentAgeGroups: ['High school'], availability: ['Weekday Evenings'], teachingMode: ['online'] };
 const documents = [{ kind: 'idDocument', name: 'id.pdf', content: pdf }, { kind: 'qualificationDocument', name: 'degree.pdf', content: pdf }];
@@ -51,7 +51,7 @@ test('enquiry survives provider failure without claiming email delivery', async 
 });
 
 test('HTTP routes protect uploads before parsing and expose enquiry validation', async () => {
-  const { default: app } = await import('../src/app.js');
+  const {createApp} = await import('../src/app.js'); const app=createApp({platformGate:(req,res,next)=>{req.platformSettings={applications:true,maintenance:false};next()}});
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const post = (path, body) => new Promise((resolve, reject) => {
