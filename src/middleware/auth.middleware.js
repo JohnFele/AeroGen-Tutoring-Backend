@@ -1,4 +1,5 @@
 import { createUserSupabaseClient } from '../config/supabase.js';
+import { isApprovedTutor, tutorApprovalRelation } from '../utils/tutorAccess.js';
 
 export const authorize = async (req, res, next) => {
   try {
@@ -39,6 +40,24 @@ export const authorizeRole = (allowedRoles) => async (req, res, next) => {
     }
 
     req.userRole = data.role;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const requireTutorApproval = async (req, res, next) => {
+  try {
+    const { data, error } = await req.supabase.from('profiles')
+      .select(`role,${tutorApprovalRelation}`).eq('id', req.userId).maybeSingle();
+    if (error) return next(error);
+    if (!data) return res.status(403).json({ message: 'User profile not found.' });
+    if (data.role === 'tutor' && !isApprovedTutor(data)) {
+      return res.status(403).json({
+        code: 'TUTOR_APPROVAL_REQUIRED',
+        message: 'Complete your tutor application and wait for approval to access the tutor dashboard.',
+      });
+    }
     return next();
   } catch (error) {
     return next(error);

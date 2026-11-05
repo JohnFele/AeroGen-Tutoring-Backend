@@ -1,13 +1,15 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { validateDraft,saveDraft,resolveSavedDocuments } from '../src/controllers/applicationDraft.controller.js'
+import { getDraft,validateDraft,saveDraft,resolveSavedDocuments } from '../src/controllers/applicationDraft.controller.js'
 const id='cf100000-0000-4000-8000-000000000001',savedId='cf100000-0000-4000-8000-000000000002',saveId='cf100000-0000-4000-8000-000000000003'
 const base={id,saveId,expectedVersion:null,application:{firstName:'Partial',idNumber:'TEST-ONLY',address:'Example'},documents:[],step:1,furthestStep:1}
 const pdf=Buffer.from('%PDF-1.4\nFictional draft document.').toString('base64')
 const file={kind:'idDocument',name:'identity.pdf',content:pdf}
 const response=()=>({code:200,set(){},status(code){this.code=code;return this},json(body){this.body=body;return this}})
 function client(reads=[null],rpc={data:{id,application:base.application,documents:[],version:1,step:1,furthest_step:1}}){
-  const calls=[];return {calls,from(){return{select(){return this},eq(){return this},maybeSingle(){return this},abortSignal:async()=>{const result=reads.shift();if(result instanceof Error)throw result;return{data:result}}}},rpc(name,args){calls.push(['rpc',name,args]);return{abortSignal:async()=>rpc}},storage:{from(){return{async upload(path){calls.push(['upload',path]);return{}},async remove(paths){calls.push(['remove',paths]);return{}},async download(path){calls.push(['download',path]);return{data:new Blob([Buffer.from(pdf,'base64')])}}}}}}
+  const calls=[]
+  const read=async()=>{const result=reads.shift();if(result instanceof Error)throw result;return{data:result}}
+  return {calls,from(){return{select(){return this},eq(){return this},order(){return this},limit(){return this},maybeSingle(){return this},then(resolve,reject){return read().then(resolve,reject)},abortSignal:read}},rpc(name,args){calls.push(['rpc',name,args]);return{abortSignal:async()=>rpc}},storage:{from(){return{async upload(path){calls.push(['upload',path]);return{}},async remove(paths){calls.push(['remove',paths]);return{}},async download(path){calls.push(['download',path]);return{data:new Blob([Buffer.from(pdf,'base64')])}}}}}}
 }
 const request=supabase=>({supabase,userId:'owner',body:{...base,documents:[file]}})
 test('a changed signed-in account cannot receive another accounts pending form save',async()=>{
@@ -39,4 +41,61 @@ test('resuming saved files resolves only document IDs in the callers own current
   const row={id,version:2,documents:[{id:savedId,kind:'idDocument',name:'identity.pdf',size:Buffer.from(pdf,'base64').length,path:'owner/private-document'}]}
   const supabase=client([row]),req={supabase,userId:'owner',body:{submissionId:id,draftVersion:2,documents:[{kind:'idDocument',savedId}]}},res=response();let passed=false;await resolveSavedDocuments(req,res,()=>{passed=true});assert(passed);assert.equal(req.body.documents[0].content,pdf);assert.equal(req.applicationDraft.id,id)
   const denied=client([row]),bad={...req,supabase:denied,body:{submissionId:id,draftVersion:2,documents:[{kind:'idDocument',savedId:saveId}]}};await resolveSavedDocuments(bad,res,()=>{throw Error('Unowned file accepted')});assert.equal(res.code,409);assert(!denied.calls.length)
+})
+
+const originalPath = 'owner/older/identity.pdf'
+const rejected = {
+  status:'rejected', first_name:'Sam', id_number:'TEST-ONLY', teaching_style:'Original approach', experience_range:'3-5', hourly_rate:300,
+  tutor_application_subjects:[{subjects:{name:'Mathematics'}}],
+  tutor_application_documents:[{id:savedId,document_type:'identity',storage_path:originalPath,original_filename:'identity.pdf',size_bytes:Buffer.from(pdf,'base64').length}],
+}
+const previous = { kind:'idDocument', previousId:savedId }
+const fail = error => { throw error }
+
+test('a rejected application becomes the initial editable form without exposing storage paths',async()=>{
+  const res=response()
+  await getDraft({userId:'owner',supabase:client([null,rejected])},res,fail)
+  assert.equal(res.body.draft,null)
+  assert.equal(res.body.revision.application.teachingStyle,'Original approach')
+  assert.equal(res.body.revision.application.idNumber,'TEST-ONLY')
+  assert.equal(res.body.revision.application.hourlyRate,'300')
+  assert.deepEqual(res.body.revision.application.subjects,['Mathematics'])
+  assert.equal(res.body.revision.documents[0].id,savedId)
+  assert(!JSON.stringify(res.body).includes(originalPath))
+})
+
+test('saving a revision creates independent draft copies of retained documents',async()=>{
+  const supabase=client([null,rejected]),res=response()
+  await saveDraft({supabase,userId:'owner',body:{...base,documents:[previous]}},res,fail)
+  assert.equal(res.code,200)
+  assert.deepEqual(supabase.calls[0],['download',originalPath])
+  const draftPath=supabase.calls.find(call=>call[0]==='upload')[1]
+  assert(draftPath.startsWith('owner/'+id+'/'))
+  assert(!supabase.calls.some(call=>call[0]==='remove'))
+})
+
+test('resubmission accepts retained documents only from the caller’s latest rejected application',async()=>{
+  const submit=async(row,document=previous,existing=null)=>{
+    const supabase=client([null,existing,row]),res=response(),req={supabase,userId:'owner',body:{submissionId:id,documents:[document]}}
+    let passed=false
+    await resolveSavedDocuments(req,res,()=>{passed=true})
+    return {supabase,res,req,passed}
+  }
+  const allowed=await submit(rejected)
+  assert(allowed.passed)
+  assert.equal(allowed.req.body.documents[0].content,pdf)
+  for(const [row,document] of [
+    [{...rejected,status:'under_review'},previous],
+    [rejected,{...previous,previousId:saveId}],
+    [rejected,{...previous,kind:'qualificationDocument'}],
+    [{...rejected,tutor_application_documents:[{...rejected.tutor_application_documents[0],storage_path:'another-account/private.pdf'}]},previous],
+  ]){
+    const denied=await submit(row,document)
+    assert(!denied.passed)
+    assert.equal(denied.res.code,409)
+    assert.equal(denied.supabase.calls.length,0)
+  }
+  const retry=await submit(null,previous,{id,status:'submitted'})
+  assert.equal(retry.res.body.applicationId,id)
+  assert.equal(retry.supabase.calls.length,0)
 })

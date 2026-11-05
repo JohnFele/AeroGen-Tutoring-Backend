@@ -6,6 +6,7 @@ import { sendEnquiry, sendSubjectRequest } from '../controllers/site.controller.
 import { supportLimiter } from '../middleware/rateLimit.middleware.js';
 import { publicContact,publicOpenings } from '../controllers/siteAdmin.controller.js';
 import {publicFaqs} from '../controllers/faq.controller.js';
+import { tutorSlots, tutorsAtTime } from '../controllers/booking.controller.js';
 import{publicPlatformSettings}from'../controllers/platformSettings.controller.js';
 
 const router = Router();
@@ -13,6 +14,8 @@ router.get('/platform-settings',publicPlatformSettings);
 router.get('/contact-details', publicContact);
 router.get('/openings', publicOpenings);
 router.get('/faqs',publicFaqs);
+router.get('/tutors/:id/availability',tutorSlots);
+router.get('/tutors/availability',tutorsAtTime);
 router.post('/enquiries', supportLimiter, sendEnquiry);
 router.post('/subject-requests', supportLimiter, sendSubjectRequest);
 // Authentication and the larger, rate-limited JSON parser are installed before the global parser in app.js.

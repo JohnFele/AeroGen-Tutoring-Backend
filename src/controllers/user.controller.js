@@ -1,42 +1,28 @@
+import { isApprovedTutor, tutorApprovalRelation } from '../utils/tutorAccess.js';
+
 export const me = async (req, res, next) => {
   try {
     if (!req.userId) return res.status(401).json({ message: "Unauthorized" });
 
     const { data: profile, error } = await req.supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, demo_dataset, created_at, updated_at')
+      .select(profileSelect)
       .eq('id', req.userId)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found' });
     if (error) return next(error);
 
-    const user = {
-      id: profile.id,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      email: profile.email,
-      phone: profile.phone,
-      location: profile.location,
-      role: profile.role,
-      authProvider: profile.auth_provider,
-      bio: profile.bio,
-      isVerified: profile.is_verified,
-      isDemo: Boolean(profile.demo_dataset),
-      demoDataset: profile.demo_dataset,
-      createdAt: profile.created_at,
-      updatedAt: profile.updated_at,
-    };
-
+    res.set('Cache-Control', 'no-store');
     return res.status(200).json({
       message: "User profile fetched successfully.",
-      user,
+      user: serializeProfile(profile),
     });
   } catch (error) {
     next(error);
   }
 };
 
-const profileSelect = 'id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, demo_dataset, created_at, updated_at';
+const profileSelect = `id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, profile_setup_pending, demo_dataset, created_at, updated_at,${tutorApprovalRelation}`;
 const profileFieldMap = {
   firstName: 'first_name',
   lastName: 'last_name',
@@ -53,9 +39,11 @@ const serializeProfile = (profile) => ({
   phone: profile.phone,
   location: profile.location,
   role: profile.role,
+  tutorApproved: isApprovedTutor(profile),
   authProvider: profile.auth_provider,
   bio: profile.bio,
   isVerified: profile.is_verified,
+  profileSetupPending: profile.profile_setup_pending,
   isDemo: Boolean(profile.demo_dataset),
   demoDataset: profile.demo_dataset,
   createdAt: profile.created_at,
@@ -75,7 +63,7 @@ export const updateMe = async (req, res, next) => {
       if (value.length > maximumLength) {
         return res.status(400).json({ message: `${requestField} must be ${maximumLength} characters or fewer.` });
       }
-      updates[databaseField] = value || null;
+      updates[databaseField] = databaseField === 'bio' ? value : value || null;
     }
 
     if (!Object.keys(updates).length) {
@@ -88,6 +76,13 @@ export const updateMe = async (req, res, next) => {
       return res.status(400).json({ message: 'Last name is required.' });
     }
 
+    if (req.body?.completeSetup === true) {
+      if (!updates.first_name || !updates.last_name || !updates.location || !/^\+[1-9]\d{8,14}$/.test(updates.phone || '')) {
+        return res.status(400).json({ message: 'Enter your name, a valid phone number and your location to complete setup.' });
+      }
+      updates.profile_setup_pending = false;
+    }
+
     const { data: profile, error } = await req.supabase
       .from('profiles')
       .update(updates)
@@ -95,6 +90,7 @@ export const updateMe = async (req, res, next) => {
       .select(profileSelect)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found.' });
+    if (error?.code === '22023' && updates.profile_setup_pending === false) return res.status(400).json({ message: error.message });
     if (error) return next(error);
 
     return res.status(200).json({ message: 'Profile updated successfully.', user: serializeProfile(profile) });

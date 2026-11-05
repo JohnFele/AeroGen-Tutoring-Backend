@@ -1,8 +1,36 @@
 import { Router } from 'express';
-import { authorize } from '../middleware/auth.middleware.js';
+import { authorize, requireTutorApproval } from '../middleware/auth.middleware.js';
 import {listNotifications,markNotificationRead,deleteNotification,readConversation} from '../controllers/notification.controller.js';
+import { bookableStudents, bookingDay, bookingHours, matchingSlots, reportBooking, requestBooking, respondToBooking, saveBookingDay, saveBookingHours, tutorsAtTime } from '../controllers/booking.controller.js';
+import { billingLimiter, bookingRequestLimiter, supportLimiter } from '../middleware/rateLimit.middleware.js';
+import { billingOverview, changePlan, checkoutLesson, confirmPlan, lessonOutcome, myTicket, myTickets, newTicket, rateTicketReply, renewalSimulation, replyTicket, resolveTicket, subscriptionReceipt, tutorPayout } from '../controllers/billingSupport.controller.js';
 const router=Router();
 router.use(authorize);
+router.get('/tickets',myTickets);
+router.post('/tickets',supportLimiter,newTicket);
+router.get('/tickets/:id',myTicket);
+router.post('/tickets/:id/resolve',supportLimiter,resolveTicket);
+router.post('/tickets/:id/replies',supportLimiter,replyTicket);
+router.post('/tickets/:id/replies/:replyId/rating',supportLimiter,rateTicketReply);
+router.get('/tutors/availability',tutorsAtTime);
+router.use(requireTutorApproval);
+router.get('/billing',billingOverview);
+router.post('/billing/subscription',billingLimiter,changePlan);
+router.post('/billing/subscription/confirm',billingLimiter,confirmPlan);
+router.get('/billing/subscription/receipts/:id',subscriptionReceipt);
+router.put('/billing/renewal-simulation',billingLimiter,renewalSimulation);
+router.post('/billing/payouts',billingLimiter,tutorPayout);
+router.post('/bookings/:id/checkout',billingLimiter,checkoutLesson);
+router.post('/bookings/:id/outcome',lessonOutcome);
+router.get('/booking-hours',bookingHours);
+router.put('/booking-hours',saveBookingHours);
+router.get('/booking-day',bookingDay);
+router.put('/booking-day',saveBookingDay);
+router.get('/booking-slots',matchingSlots);
+router.get('/bookable-students',bookableStudents);
+router.post('/bookings',bookingRequestLimiter,requestBooking);
+router.patch('/bookings/:id',respondToBooking);
+router.post('/bookings/:id/report',supportLimiter,reportBooking);
 const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 router.get('/',async(req,res,next)=>{
   try{const {data,error}=await req.supabase.rpc('my_tutoring_workspace');if(error)throw error;res.set('Cache-Control','no-store');return res.json(data);}catch(error){return next(error);}

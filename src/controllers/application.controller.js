@@ -2,16 +2,11 @@ import {notifyApplicationAdmins} from '../services/adminNotifications.js';
 import { cleanSubmittedDraftFiles } from './applicationDraft.controller.js';
 import { randomUUID } from 'node:crypto';
 import { validateApplication } from './site.controller.js';
+import { applicationBucket, applicationDocumentTypes } from './applicationFiles.js';
+import { applicationFields } from './applicationRevision.js';
 
-const bucket = 'tutor-application-documents';
+const bucket = applicationBucket;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const fields = {
-  firstName: 'first_name', lastName: 'last_name', email: 'contact_email', idNumber: 'id_number',
-  phone: 'phone', address: 'street_address', city: 'city', province: 'province',
-  highestQualification: 'highest_qualification', institution: 'institution', certifications: 'certifications',
-  previousPlatforms: 'previous_platforms', studentAgeGroups: 'student_age_groups', teachingStyle: 'teaching_style',
-  availability: 'availability_slots', teachingMode: 'teaching_modes', studentsPerSession: 'students_per_session',
-};
 export function applicationRecord(data) {
   const experience = { '0-1': 0, '1-2': 1, '3-5': 3, '5-10': 5, '10+': 10 };
   const years = Object.hasOwn(experience, data.yearsExperience) ? experience[data.yearsExperience] : Number(data.yearsExperience);
@@ -21,7 +16,7 @@ export function applicationRecord(data) {
   if (!['Eastern Cape','Free State','Gauteng','KwaZulu-Natal','Limpopo','Mpumalanga','North West','Northern Cape','Western Cape'].includes(data.province)) throw new Error('Choose a valid South African province.');
   if (data.teachingMode.some(mode => !['online', 'in-person'].includes(mode))) throw new Error('Choose valid teaching modes.');
   return {
-    ...Object.fromEntries(Object.entries(fields).map(([input, column]) => [column, Array.isArray(data[input]) ? [...new Set(data[input].map(item => item.trim()))] : String(data[input] || '').trim()])),
+    ...Object.fromEntries(Object.entries(applicationFields).map(([input, column]) => [column, Array.isArray(data[input]) ? [...new Set(data[input].map(item => item.trim()))] : String(data[input] || '').trim()])),
     year_completed: Number(data.yearCompleted), years_experience: years,
     experience_range: Object.hasOwn(experience, data.yearsExperience) ? data.yearsExperience : null,
     hourly_rate: Number(data.hourlyRate),
@@ -35,7 +30,7 @@ export function databaseIssue(res, error) {
 }
 export const currentApplication = async (req, res, next) => {
   try {
-    const { data, error } = await req.supabase.from('tutor_applications').select('id,status,submitted_at,reviewed_at,review_notes,updated_at').eq('user_id', req.userId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    const { data, error } = await req.supabase.from('tutor_applications').select('id,status,submitted_at,reviewed_at,review_notes,updated_at').eq('user_id', req.userId).order('created_at', { ascending: false }).order('id', { ascending: false }).limit(1).maybeSingle();
     if (error) throw error;
     return res.json({ application: data });
   } catch (error) { return next(error); }
@@ -69,7 +64,7 @@ export const createSubmitApplication = ({notifyAdmins=notifyApplicationAdmins}={
       const { error } = await req.supabase.storage.from(bucket).upload(path, bytes, { contentType: mime, upsert: false });
       if (error) throw error;
       uploaded.push(path);
-      documents.push({ document_type: { idDocument: 'identity', qualificationDocument: 'qualification', resume: 'resume' }[input.kind], storage_path: path, original_filename: input.name, mime_type: mime, size_bytes: bytes.length });
+      documents.push({ document_type: applicationDocumentTypes[input.kind], storage_path: path, original_filename: input.name, mime_type: mime, size_bytes: bytes.length });
     }
     const { data, error } = await req.supabase.rpc(req.applicationDraft?'submit_tutor_application_draft':'submit_tutor_application', { _id: id, _data: record, _subjects: subjects.map(subject => subject.id), _documents: documents, ...(req.applicationDraft?{_draft_version:req.applicationDraft.version}:{}) }).abortSignal(AbortSignal.timeout(15000));
     if (error) throw error;

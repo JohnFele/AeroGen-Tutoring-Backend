@@ -1,3 +1,5 @@
+import { isBookingSchemaUnavailable } from '../utils/bookingSchema.js';
+
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const stringLimits = { public_name: 160, bio: 4000, city: 160, province: 160, qualification: 250, institution: 250, certifications: 2000, teaching_style: 4000, students_per_session: 20, avatar_url: 2048 };
 const boolFields = new Set(['is_approved','is_accepting_students','is_featured']);
@@ -74,13 +76,15 @@ export const editAdminTutor=async(req,res,next)=>{
 };
 export const adminData=async(req,res,next)=>{
   try {
-    const [users,tutors,bookings,payments,applications]=await Promise.all([
+    const [users,tutors,metrics,applications]=await Promise.all([
       allRows(req.supabase,'profiles','id,first_name,last_name,email,role,is_verified,demo_dataset,created_at'),
       allRows(req.supabase,'tutor_profiles',tutorColumns,'user_id'),
-      allRows(req.supabase,'bookings','*,student:profiles!bookings_student_id_fkey(first_name,last_name),tutor:tutor_profiles!bookings_tutor_id_fkey(public_name),subject:subjects!bookings_subject_id_fkey(name)'),
-      allRows(req.supabase,'payments','id,booking_id,status,amount,platform_fee,provider,created_at'),
+      req.supabase.rpc('admin_booking_metrics').abortSignal(AbortSignal.timeout(15000)),
       allRows(req.supabase,'tutor_applications','id,user_id,status,highest_qualification,submitted_at,reviewed_at,created_at'),
     ]);
-    return res.json({users,tutors,bookings,payments,applications});
+    if(metrics.error && !isBookingSchemaUnavailable(metrics.error)) throw metrics.error;
+    const bookingMetricsAvailable = !metrics.error;
+    const bookingMetrics = bookingMetricsAvailable ? metrics.data : { bookings: [], bookingActivity: [], payments: [] };
+    return res.json({users,tutors,...bookingMetrics,applications,bookingMetricsAvailable});
   } catch(error){return next(error);}
 };

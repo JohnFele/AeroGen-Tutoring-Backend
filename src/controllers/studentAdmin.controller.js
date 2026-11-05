@@ -17,7 +17,7 @@ export const listStudents = async (req, res, next) => {
   try {
     const students = [];
     for (let start = 0; ; start += 500) {
-      const { data, error } = await req.supabase.from('profiles').select(`${columns},bookings!bookings_student_id_fkey(count)`).eq('role', 'student').order('id').range(start, start + 499).abortSignal(AbortSignal.timeout(15000));
+      const { data, error } = await req.supabase.from('profiles').select(columns).eq('role', 'student').order('id').range(start, start + 499).abortSignal(AbortSignal.timeout(15000));
       if (error) throw error;
       students.push(...data);
       if (data.length < 500) break;
@@ -31,9 +31,7 @@ export const studentDetails = async (req, res, next) => {
     const { data: student, error } = await req.supabase.from('profiles').select(columns).eq('role', 'student').eq('id', req.params.id).maybeSingle();
     if (error) throw error;
     if (!student) return res.status(404).json({ message: 'Student not found.' });
-    const { data: bookings, error: bookingError } = await req.supabase.from('bookings').select('id,status,starts_at,duration_minutes,total_amount,tutor:tutor_profiles!bookings_tutor_id_fkey(public_name),subject:subjects(name)').eq('student_id', req.params.id).order('starts_at', { ascending: false }).limit(100);
-    if (bookingError) throw bookingError;
-    return res.json({ student, bookings });
+    return res.json({ student });
   } catch (error) { return next(error); }
 };
 export const editStudent = async (req, res, next) => {
@@ -43,7 +41,7 @@ export const editStudent = async (req, res, next) => {
   try {
     const { error } = await req.supabase.rpc('admin_update_student', { _id: req.params.id, _patch: changes, _expected_updated_at: req.body.expectedUpdatedAt }).abortSignal(AbortSignal.timeout(15000));
     if (error) { if (databaseIssue(res, error)) return; throw error; }
-    const { data, error: readError } = await req.supabase.from('profiles').select(`${columns},bookings!bookings_student_id_fkey(count)`).eq('id', req.params.id).single();
+    const { data, error: readError } = await req.supabase.from('profiles').select(columns).eq('id', req.params.id).single();
     if (readError) throw readError;
     return res.json({ message: 'Student profile saved.', student: data });
   } catch (error) { return next(error); }

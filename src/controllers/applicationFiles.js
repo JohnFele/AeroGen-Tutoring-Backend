@@ -1,5 +1,6 @@
 export const applicationBucket='tutor-application-documents';
-export const documentKinds=['idDocument','qualificationDocument','resume'];
+export const applicationDocumentTypes = { idDocument: 'identity', qualificationDocument: 'qualification', resume: 'resume' };
+export const documentKinds = Object.keys(applicationDocumentTypes);
 export function decodeApplicationFile(file) {
   if(!documentKinds.includes(file?.kind))throw new Error('Choose a valid document type.');
   const max=(file.kind==='qualificationDocument'?10:5)*1024*1024;

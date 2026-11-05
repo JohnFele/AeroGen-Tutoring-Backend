@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import routes from './routes/router.js';
 // import { ENV } from './config/env.config.js';
-import { applicationLimiter, generalLimiter } from './middleware/rateLimit.middleware.js';
+import { applicationLimiter, generalLimiter, profileReadLimiter } from './middleware/rateLimit.middleware.js';
 import { corsOptions } from './config/cors.config.js';
 import { authorize } from './middleware/auth.middleware.js';
 import {platformGate as defaultPlatformGate,requireApplicationsOpen} from './middleware/platform.middleware.js';
@@ -17,6 +17,7 @@ app.post('/api/v1/site/tutor-applications', applicationLimiter, authorize, platf
 app.put('/api/v1/site/tutor-application-draft', authorize, platformGate, express.json({ limit: '28mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
+app.use(profileReadLimiter);
 app.use(generalLimiter);
 
 app.use('/api/v1',platformGate);

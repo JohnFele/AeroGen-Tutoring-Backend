@@ -2,12 +2,13 @@ import{readPlatformSettings}from'../services/platformSettings.js';
 import {randomUUID} from 'node:crypto';
 import {createPublicSupabaseClient} from '../config/supabase.js';
 import {deliverSupportEmail} from './support.controller.js';
+import {applySupportSearch,parseSupportSearch} from '../utils/supportSearch.js';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const contactLimits={email:254,phone:16,weekday_hours:100,saturday_hours:100,sunday_hours:100,operator_name:160,registration_number:80,business_address:1000,privacy_email:254,information_officer:160};
 const openingLimits={title:160,department:100,employment_type:40,location:160,salary:160,description:8000};
-const categories=new Set(['general','tutoring','billing','technical','partnership','careers','other']);
+const categories=new Set(['general','tutoring','billing','technical','partnership','careers','other','bug']);
 const text=(value,max,min=0)=>{if(typeof value!=='string'||value.trim().length<min||value.length>max)throw new Error(`Enter between ${min} and ${max} characters.`);return value.trim()};
 function fields(body,limits,optional=[]){
   if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!Object.hasOwn(limits,key)))throw new Error('Send only the editable fields.');
@@ -38,7 +39,7 @@ export function validateEnquiry(body){
   return{id,firstName,lastName,email,category:body.category,message};
 }
 function siteError(res,error){
-  const status={PT409:409,PT429:429,'42501':403,'23514':400,'22023':400,'22P02':400,'23505':409,'42P01':503,PGRST202:503,PGRST204:503}[error?.code];
+  const status={PT404:404,PT409:409,PT429:429,'42501':403,'23514':400,'22023':400,'22P02':400,'23505':409,'42P01':503,PGRST202:503,PGRST204:503}[error?.code];
   if(!status)return false;
   res.status(status).json({message:status===503?'Site administration is temporarily unavailable. Please try again later.':status===403?'Administrator access required.':status===409?'This record changed. Reload it before saving again.':status===429?'Too many requests. Please try again later.':error.message||'Check the submitted fields.'});return true;
 }
@@ -55,15 +56,19 @@ export function createEnquiryHandler({getClient=createPublicSupabaseClient,getCo
     let input;try{input=validateEnquiry(req.body)}catch(error){return res.status(400).json({message:error.message})}
     try{
       const client=getClient();const{data,error}=await client.rpc('submit_contact_enquiry',{_id:input.id,_first_name:input.firstName,_last_name:input.lastName,_email:input.email,_category:input.category,_message:input.message});if(error)throw error;
+      const reference=data.case_reference||data.id;
+      const label=input.category==='bug'?'Bug report':'Website enquiry';
       if(data.created){try{
         const platform=await getPlatform(client);
         if(platform.notifications){
         const contact=await getContact(client);
-        const delivered=await deliver({name:`${input.firstName} ${input.lastName}`.slice(0,120),email:input.email,topic:'Other',message:`Website enquiry · ${input.category}\nReference: ${data.id}\n\n${input.message}`},{recipient:contact.email,siteSubject:`[AeroGen Enquiry] ${input.category}`,title:'Website enquiry'});
+        const delivered=await deliver({name:`${input.firstName} ${input.lastName}`.slice(0,120),email:input.email,topic:'Other',message:`${label} · ${input.category}\nReference: ${reference}\n\n${input.message}`},{recipient:contact.email,siteSubject:`[${reference}] AeroGen ${label.toLowerCase()}`,title:label});
         if(delivered.status!==202)console.error('Enquiry saved; email notification could not be delivered.');
         }
       }catch{console.error('Enquiry saved; email notification is unavailable.')}}
-      return res.status(202).json({reference:data.id,message:'Your enquiry has been received by AeroGen Tutoring. We will reply by email. Keep this reference: '+data.id});
+      return res.status(202).json({reference,message:input.category==='bug'
+        ? 'Your bug report has been received. Keep this reference: '+reference
+        : 'Your enquiry has been received by AeroGen Tutoring. We will reply by email. Keep this reference: '+reference});
     }catch(error){if(!siteError(res,error))return next(error)}
   };
 }
@@ -86,11 +91,21 @@ export const deleteOpening=async(req,res,next)=>{
   try{const{data,error}=await req.supabase.from('career_openings').delete().eq('id',req.params.id).eq('version',version).select('id').maybeSingle().abortSignal(timeout());if(error)throw error;if(!data)return res.status(409).json({message:'This opening changed. Reload before deleting.'});return res.json({deleted:true})}catch(error){if(!siteError(res,error))next(error)}
 };
 export const listEnquiries=async(req,res,next)=>{try{
-  const page=Math.max(1,Number.parseInt(req.query.page,10)||1),limit=25;
-  let query=req.supabase.from('contact_enquiries').select('id,first_name,last_name,email,category,status,version,created_at,updated_at',{count:'exact'});
+  const page=Number(req.query.page??1),limit=25;
+  if(!Number.isSafeInteger(page)||page<1||page>1000)return res.status(400).json({message:'Choose a valid page.'});
+  const search=parseSupportSearch(req.query,'enquiries');
+  if(!search)return res.status(400).json({message:'Enter a valid enquiry reference, prefix, or UTC date.'});
+  let query=req.supabase.from('contact_enquiries').select('id,case_reference,first_name,last_name,email,category,status,version,created_at,updated_at',{count:'exact'});
   if(req.query.status){if(!['new','in_progress','resolved','spam'].includes(req.query.status))return res.status(400).json({message:'Choose a valid enquiry status.'});query=query.eq('status',req.query.status)}
-  if(req.query.email){if(typeof req.query.email!=='string'||req.query.email.length>254)return res.status(400).json({message:'Enter a valid email search.'});query=query.ilike('email',`%${req.query.email.replaceAll('%','').replaceAll('_','')}%`)}
-  const{data,count,error}=await query.order('created_at',{ascending:false}).order('id').range((page-1)*limit,page*limit-1).abortSignal(timeout());if(error)throw error;return res.json({enquiries:data,total:count,page,limit});
+  if(req.query.email){
+    const email=typeof req.query.email==='string'?req.query.email.trim().toLowerCase():'';
+    if(!email||email.length>254)return res.status(400).json({message:'Enter a valid email search.'});
+    if(emailPattern.test(email))query=query.eq('email',email);
+    else if(/^[a-z0-9_.+@-]{2,254}$/.test(email))query=query.ilike('email',`%${email.replaceAll('_','\\_')}%`);
+    else return res.status(400).json({message:'Enter an email address or part of one.'});
+  }
+  if(req.query.category){if(!categories.has(req.query.category))return res.status(400).json({message:'Choose a valid enquiry category.'});query=query.eq('category',req.query.category)}
+  const{data,count,error}=await applySupportSearch(query,search).order('created_at',{ascending:false}).order('id').range((page-1)*limit,page*limit-1).abortSignal(timeout());if(error)throw error;return res.json({enquiries:data,total:count,page,limit});
 }catch(error){if(!siteError(res,error))next(error)}};
 async function enquiryFrom(req){const{data,error}=await req.supabase.from('contact_enquiries').select('*,replies:enquiry_replies(*)').eq('id',req.params.id).maybeSingle().abortSignal(timeout());if(error)throw error;return data}
 export const enquiryDetails=async(req,res,next)=>{if(!uuid.test(req.params.id))return res.status(400).json({message:'Invalid enquiry.'});try{const enquiry=await enquiryFrom(req);return enquiry?res.json({enquiry}):res.status(404).json({message:'Enquiry not found.'})}catch(error){if(!siteError(res,error))next(error)}};
@@ -104,7 +119,7 @@ export const replyToEnquiry=async(req,res,next)=>{
     const{data,error}=await req.supabase.rpc('begin_enquiry_reply',{_id:req.body.id,_enquiry_id:req.params.id,_message:message,_expected_version:version}).abortSignal(timeout());if(error)throw error;
     if(!data.created)return res.json({reply:data.reply,message:'This reply is already recorded. Check its delivery status before sending another.'});
     let delivered;
-    try{const enquiry=await enquiryFrom(req),contact=await contactFrom(req.supabase);delivered=await deliverSupportEmail({name:'AeroGen Tutoring',email:contact.email,topic:'Other',message},{recipient:enquiry.email,recipientName:`${enquiry.first_name} ${enquiry.last_name}`,siteSubject:`AeroGen Tutoring: your ${enquiry.category} enquiry`,title:'A response to your enquiry',isReply:true});}catch{delivered={status:502,deliveryStatus:'unknown'}}
+    try{const enquiry=await enquiryFrom(req),contact=await contactFrom(req.supabase);delivered=await deliverSupportEmail({name:'AeroGen Tutoring',email:contact.email,topic:'Other',message},{recipient:enquiry.email,recipientName:`${enquiry.first_name} ${enquiry.last_name}`,siteSubject:`[${enquiry.case_reference||enquiry.id}] AeroGen Tutoring enquiry reply`,title:'A response to your enquiry',isReply:true});}catch{delivered={status:502,deliveryStatus:'unknown'}}
     const delivery_status=delivered.status===202?'sent':delivered.deliveryStatus||'failed';
     const{data:reply,error:saveError}=await req.supabase.from('enquiry_replies').update({delivery_status,provider_id:delivered.providerId||null}).eq('id',data.reply.id).eq('delivery_status','pending').select().maybeSingle().abortSignal(timeout());
     if(saveError)throw saveError;

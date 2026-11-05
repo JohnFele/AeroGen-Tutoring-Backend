@@ -26,12 +26,19 @@ try {
       const response = await fetch(`http://127.0.0.1:${server.address().port}/api/v1/users/me`, { headers: { Authorization: `Bearer ${data.session.access_token}` } })
       assert.equal(response.status, 200, `${account.key}: backend profile request failed`)
       const { user } = await response.json()
+      const approvedTutor = account.role === 'tutor' && account.key !== 'tutor-pending'
+      assert.equal(user.tutorApproved, approvedTutor)
       const headers={Authorization: 'Bearer '+data.session.access_token}
       const workspaceResponse=await fetch('http://127.0.0.1:'+server.address().port+'/api/v1/workspace',{headers})
-      assert.equal(workspaceResponse.status,200,account.key+': workspace API')
       const workspace=await workspaceResponse.json()
-      assert(workspace.bookings.every(row=>[row.student_id,row.tutor_id].includes(account.id)))
-      assert(workspace.conversations.every(row=>row.participants.every(person=>person.id!==account.id)))
+      if (account.role === 'tutor' && !approvedTutor) {
+        assert.equal(workspaceResponse.status,403,account.key+': workspace API')
+        assert.equal(workspace.code,'TUTOR_APPROVAL_REQUIRED')
+      } else {
+        assert.equal(workspaceResponse.status,200,account.key+': workspace API')
+        assert(workspace.bookings.every(row=>[row.student_id,row.tutor_id].includes(account.id)))
+        assert(workspace.conversations.every(row=>row.participants.every(person=>person.id!==account.id)))
+      }
       const adminResponse=await fetch('http://127.0.0.1:'+server.address().port+'/api/v1/admin/tutors',{headers})
       assert.equal(adminResponse.status,403,account.key+': admin must reject ordinary roles')
       assert.equal(user.role, account.role)
