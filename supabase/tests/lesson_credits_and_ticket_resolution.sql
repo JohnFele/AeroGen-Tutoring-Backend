@@ -12,8 +12,8 @@ values ('c1000000-0000-4000-8000-000000000002','Credit Test Tutor',true,180,arra
 insert into public.bookings(id,student_id,tutor_id,starts_at,ends_at,status,teaching_mode,duration_minutes,hourly_rate,total_amount)
 select ('c2000000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,
   'c1000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000002',
-  now() + make_interval(days => 40+i),now() + make_interval(days => 40+i,hours => 1),'confirmed','online',60,180,
-  case when i=10 then 240 else 180 end
+  now() + make_interval(days => 40+i),now() + make_interval(days => 40+i,mins => case when i=10 then 90 else 60 end),
+  'confirmed','online',case when i=10 then 90 else 60 end,180,case when i=10 then 270 else 180 end
 from generate_series(1,11) i;
 update public.bookings set starts_at=now()-interval '2 hours',ends_at=now()-interval '1 hour'
 where id='c2000000-0000-4000-8000-000000000009';
