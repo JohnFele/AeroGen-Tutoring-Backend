@@ -7,7 +7,7 @@ const text = (value, max = 1000) => typeof value === 'string' && value.trim().le
 export const sendSubjectRequest = (req, res) => {
   const body = req.body || {};
   if (body.website) return res.status(400).json({ message: 'Unable to submit this request.' });
-  const limits = { firstName: 60, lastName: 60, email: 254, subjectName: 150, moduleCode: 60, institution: 150, educationLevel: 40, programme: 120, studyYear: 80, lessonMode: 20, location: 150, helpNeeded: 2000 };
+  const limits = { firstName: 60, lastName: 60, email: 254, subjectName: 150, moduleCode: 60, institution: 150, educationLevel: 40, curriculum: 120, programme: 120, studyYear: 80, lessonMode: 20, location: 150, helpNeeded: 2000 };
   const fields = {};
   for (const [field, limit] of Object.entries(limits)) {
     if (body[field] !== undefined && (typeof body[field] !== 'string' || body[field].length > limit)) return res.status(400).json({ message: `Enter a valid ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} (up to ${limit} characters).` });
@@ -25,6 +25,7 @@ export const sendSubjectRequest = (req, res) => {
       `Subject or module: ${fields.subjectName}`,
       `Module code: ${fields.moduleCode || 'Not supplied'}`,
       `Education level: ${level.name}`,
+      `Curriculum or qualification: ${fields.curriculum || 'Not supplied'}`,
       `Institution: ${fields.institution || 'Not supplied'}`,
       `Degree / programme: ${fields.programme || 'Not supplied'}`,
       `Grade / year of study: ${fields.studyYear || 'Not supplied'}`,

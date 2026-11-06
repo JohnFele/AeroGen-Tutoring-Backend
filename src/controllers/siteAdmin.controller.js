@@ -3,6 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {createPublicSupabaseClient} from '../config/supabase.js';
 import {deliverSupportEmail} from './support.controller.js';
 import {applySupportSearch,parseSupportSearch} from '../utils/supportSearch.js';
+import {screenshotArgs,triageArgs} from '../utils/bugReports.js';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,7 +42,7 @@ export function validateEnquiry(body){
 function siteError(res,error){
   const status={PT404:404,PT409:409,PT429:429,'42501':403,'23514':400,'22023':400,'22P02':400,'23505':409,'42P01':503,PGRST202:503,PGRST204:503}[error?.code];
   if(!status)return false;
-  res.status(status).json({message:status===503?'Site administration is temporarily unavailable. Please try again later.':status===403?'Administrator access required.':status===409?'This record changed. Reload it before saving again.':status===429?'Too many requests. Please try again later.':error.message||'Check the submitted fields.'});return true;
+  res.status(status).json({message:status===503?'Site administration is temporarily unavailable. Please try again later.':status===403?'Administrator access required.':status===409?'This record changed. Reload it before saving again.':error.message||'Check the submitted fields.'});return true;
 }
 const timeout=()=>AbortSignal.timeout(15000);
 async function contactFrom(client){const{data,error}=await client.from('site_contact_settings').select('*').eq('id',true).single().abortSignal(timeout());if(error)throw error;return data;}
@@ -51,11 +52,17 @@ export const publicOpenings=async(req,res,next)=>{try{
   for(let offset=0;;offset+=500){const{data,error}=await client.from('career_openings').select('id,title,department,employment_type,location,salary,description,requirements,closes_on,created_at').order('created_at',{ascending:false}).order('id').range(offset,offset+499).abortSignal(timeout());if(error)throw error;openings.push(...data);if(data.length<500)break}
   res.set('Cache-Control','no-store');return res.json({openings});
 }catch(error){if(!siteError(res,error))next(error)}};
-export function createEnquiryHandler({getClient=createPublicSupabaseClient,getContact=contactFrom,getPlatform=readPlatformSettings,deliver=deliverSupportEmail}={}){
+export function createEnquiryHandler({getClient=createPublicSupabaseClient,getContact=contactFrom,getPlatform=readPlatformSettings,deliver=deliverSupportEmail,bugReport=false}={}){
   return async(req,res,next)=>{
-    let input;try{input=validateEnquiry(req.body)}catch(error){return res.status(400).json({message:error.message})}
+    let input;try{input=validateEnquiry(bugReport?{...req.body,category:'bug'}:req.body)}catch(error){return res.status(400).json({message:error.message})}
+    const screenshot=bugReport?screenshotArgs(req.body.screenshot):null;
+    if(bugReport&&!screenshot)return res.status(400).json({message:'Choose a PNG, JPEG or WebP screenshot up to 2 MB.'});
     try{
-      const client=getClient();const{data,error}=await client.rpc('submit_contact_enquiry',{_id:input.id,_first_name:input.firstName,_last_name:input.lastName,_email:input.email,_category:input.category,_message:input.message});if(error)throw error;
+      const client=getClient();
+      const args={_id:input.id,_first_name:input.firstName,_last_name:input.lastName,_email:input.email,_message:input.message};
+      const{data,error}=await client.rpc(bugReport?'submit_guest_bug_report':'submit_contact_enquiry',
+        {...args,...(bugReport?screenshot:{_category:input.category})});
+      if(error)throw error;
       const reference=data.case_reference||data.id;
       const label=input.category==='bug'?'Bug report':'Website enquiry';
       if(data.created){try{
@@ -73,6 +80,7 @@ export function createEnquiryHandler({getClient=createPublicSupabaseClient,getCo
   };
 }
 export const receiveEnquiry=createEnquiryHandler();
+export const receiveGuestBugReport=createEnquiryHandler({bugReport:true});
 export const adminContact=async(req,res,next)=>{try{return res.json({contact:await contactFrom(req.supabase)})}catch(error){if(!siteError(res,error))next(error)}};
 function expected(body){if(!Number.isSafeInteger(body?.expectedVersion)||body.expectedVersion<1)throw new Error('Reload this record before saving.');return body.expectedVersion}
 export const saveContact=async(req,res,next)=>{
@@ -95,7 +103,14 @@ export const listEnquiries=async(req,res,next)=>{try{
   if(!Number.isSafeInteger(page)||page<1||page>1000)return res.status(400).json({message:'Choose a valid page.'});
   const search=parseSupportSearch(req.query,'enquiries');
   if(!search)return res.status(400).json({message:'Enter a valid enquiry reference, prefix, or UTC date.'});
-  let query=req.supabase.from('contact_enquiries').select('id,case_reference,first_name,last_name,email,category,status,version,created_at,updated_at',{count:'exact'});
+  const developer=req.query.queue==='developer';
+  if(developer&&req.userRole!=='superUser')return res.status(403).json({message:'Only superusers can access the developer queue.'});
+  let query=req.supabase.from('contact_enquiries').select('id,case_reference,first_name,last_name,email,category,status,version,created_at,updated_at,response_due_at,developer_status',{count:'exact'});
+  if(developer)query=query.not('developer_status','is',null);
+  if(req.query.developerStatus){
+    if(!developer||!['new','investigating','waiting','resolved'].includes(req.query.developerStatus))return res.status(400).json({message:'Choose a valid developer status.'});
+    query=query.eq('developer_status',req.query.developerStatus);
+  }
   if(req.query.status){if(!['new','in_progress','resolved','spam'].includes(req.query.status))return res.status(400).json({message:'Choose a valid enquiry status.'});query=query.eq('status',req.query.status)}
   if(req.query.email){
     const email=typeof req.query.email==='string'?req.query.email.trim().toLowerCase():'';
@@ -108,7 +123,16 @@ export const listEnquiries=async(req,res,next)=>{try{
   const{data,count,error}=await applySupportSearch(query,search).order('created_at',{ascending:false}).order('id').range((page-1)*limit,page*limit-1).abortSignal(timeout());if(error)throw error;return res.json({enquiries:data,total:count,page,limit});
 }catch(error){if(!siteError(res,error))next(error)}};
 async function enquiryFrom(req){const{data,error}=await req.supabase.from('contact_enquiries').select('*,replies:enquiry_replies(*)').eq('id',req.params.id).maybeSingle().abortSignal(timeout());if(error)throw error;return data}
-export const enquiryDetails=async(req,res,next)=>{if(!uuid.test(req.params.id))return res.status(400).json({message:'Invalid enquiry.'});try{const enquiry=await enquiryFrom(req);return enquiry?res.json({enquiry}):res.status(404).json({message:'Enquiry not found.'})}catch(error){if(!siteError(res,error))next(error)}};
+export const enquiryDetails=async(req,res,next)=>{
+  if(!uuid.test(req.params.id))return res.status(400).json({message:'Invalid enquiry.'});
+  try{
+    const enquiry=await enquiryFrom(req);
+    if(!enquiry)return res.status(404).json({message:'Enquiry not found.'});
+    const {data,error}=await req.supabase.rpc('support_bug_screenshot',{_id:enquiry.id,_guest:true,_metadata:true}).abortSignal(timeout());
+    if(error)throw error;
+    return res.json({enquiry:{...enquiry,has_screenshot:Boolean(data)}});
+  }catch(error){if(!siteError(res,error))next(error)}
+};
 export const updateEnquiry=async(req,res,next)=>{
   let clean,version;try{if(!uuid.test(req.params.id))throw new Error('Invalid enquiry.');version=expected(req.body);const changes=req.body.changes;if(!changes||!Object.keys(changes).length||Object.keys(changes).some(key=>!['status','internal_notes'].includes(key)))throw new Error('Edit only status and internal notes.');clean={};if(changes.status!==undefined){if(!['new','in_progress','resolved','spam'].includes(changes.status))throw new Error('Choose a valid status.');clean.status=changes.status}if(changes.internal_notes!==undefined)clean.internal_notes=text(changes.internal_notes,5000)}catch(error){return res.status(400).json({message:error.message})}
   try{const{data,error}=await req.supabase.from('contact_enquiries').update(clean).eq('id',req.params.id).eq('version',version).select().maybeSingle().abortSignal(timeout());if(error)throw error;if(!data)return res.status(409).json({message:'This enquiry changed. Reload before saving.'});return res.json({enquiry:data})}catch(error){if(!siteError(res,error))next(error)}
@@ -118,11 +142,38 @@ export const replyToEnquiry=async(req,res,next)=>{
   try{
     const{data,error}=await req.supabase.rpc('begin_enquiry_reply',{_id:req.body.id,_enquiry_id:req.params.id,_message:message,_expected_version:version}).abortSignal(timeout());if(error)throw error;
     if(!data.created)return res.json({reply:data.reply,message:'This reply is already recorded. Check its delivery status before sending another.'});
-    let delivered;
-    try{const enquiry=await enquiryFrom(req),contact=await contactFrom(req.supabase);delivered=await deliverSupportEmail({name:'AeroGen Tutoring',email:contact.email,topic:'Other',message},{recipient:enquiry.email,recipientName:`${enquiry.first_name} ${enquiry.last_name}`,siteSubject:`[${enquiry.case_reference||enquiry.id}] AeroGen Tutoring enquiry reply`,title:'A response to your enquiry',isReply:true});}catch{delivered={status:502,deliveryStatus:'unknown'}}
-    const delivery_status=delivered.status===202?'sent':delivered.deliveryStatus||'failed';
-    const{data:reply,error:saveError}=await req.supabase.from('enquiry_replies').update({delivery_status,provider_id:delivered.providerId||null}).eq('id',data.reply.id).eq('delivery_status','pending').select().maybeSingle().abortSignal(timeout());
-    if(saveError)throw saveError;
+    const {reply,delivery_status}=await deliverEnquiryReply(req.supabase,await enquiryFrom(req),data.reply.id,message);
     return res.json({reply:reply||data.reply,message:delivery_status==='sent'?'Reply accepted by the email provider.':delivery_status==='unknown'?'Delivery could not be confirmed. Check Brevo before sending again.':'Reply was not sent. Your message remains in the history.'});
   }catch(error){if(!siteError(res,error))next(error)}
+};
+
+async function deliverEnquiryReply(client,enquiry,id,message,title='A response to your enquiry'){
+  let delivered;
+  try{
+    const contact=await contactFrom(client);
+    delivered=await deliverSupportEmail({name:'AeroGen Tutoring',email:contact.email,topic:'Other',message},{
+      recipient:enquiry.email,recipientName:`${enquiry.first_name} ${enquiry.last_name}`,
+      siteSubject:`[${enquiry.case_reference||enquiry.id}] AeroGen Tutoring support update`,title,isReply:true,
+    });
+  }catch{delivered={status:502,deliveryStatus:'unknown'};}
+  const delivery_status=delivered.status===202?'sent':delivered.deliveryStatus||'failed';
+  const {data:reply,error}=await client.from('enquiry_replies').update({delivery_status,provider_id:delivered.providerId||null})
+    .eq('id',id).eq('delivery_status','pending').select().maybeSingle().abortSignal(timeout());
+  if(error)throw error;
+  return {reply,delivery_status};
+}
+
+export const triageEnquiry=async(req,res,next)=>{
+  const args=triageArgs(req.body,req.body?.expectedVersion);
+  if(!uuid.test(req.params.id)||!args)return res.status(400).json({message:'Check the report details and try again.'});
+  try{
+    const {data,error}=await req.supabase.rpc('triage_guest_enquiry',{_enquiry:req.params.id,...args}).abortSignal(timeout());
+    if(error)throw error;
+    let noticeStatus=null;
+    if(data.notice_id){
+      try{({delivery_status:noticeStatus}=await deliverEnquiryReply(req.supabase,data.enquiry,data.notice_id,data.notice,'An update on your AeroGen report'));}
+      catch{noticeStatus='unknown';}
+    }
+    return res.json({enquiry:data.enquiry,noticeStatus});
+  }catch(error){if(!siteError(res,error))next(error);}
 };

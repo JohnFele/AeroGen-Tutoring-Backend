@@ -75,6 +75,11 @@ export function bookingDay(req, res, next) {
   return rpc(req.supabase, 'my_booking_day', { _day: req.query.date }, res, next, data => data);
 }
 
+export function bookingMonth(req, res, next) {
+  if (!validDate(req.query.date)) return bad(res, 'Choose a valid month.');
+  return rpc(req.supabase, 'my_booking_month', { _month: req.query.date }, res, next, data => data);
+}
+
 export function saveBookingDay(req, res, next) {
   const { date, mode, start, end } = req.body || {};
   if (!validDate(date) || !['weekly','custom','closed'].includes(mode) ||
@@ -98,14 +103,17 @@ export function saveBookingHours(req, res, next) {
 }
 
 export function requestBooking(req, res, next) {
-  const { tutorId, studentId = req.userId, subjectId, startsAt, duration, mode, type, notes = '' } = req.body || {};
+  const { tutorId, studentId = req.userId, subjectId, startsAt, duration, mode, type, notes = '', curriculumCode } = req.body || {};
   if (!uuid.test(tutorId) || !uuid.test(studentId) || !Number.isSafeInteger(subjectId) || subjectId < 1 ||
     typeof startsAt !== 'string' || !Number.isFinite(Date.parse(startsAt)) || !durations.includes(duration) ||
     !['online', 'in-person'].includes(mode) || !['individual', 'small-group', 'medium-group'].includes(type) ||
-    typeof notes !== 'string' || notes.length > 2000) return bad(res, 'Choose a subject, available time, teaching format and duration.');
+    typeof notes !== 'string' || notes.length > 2000 ||
+    (curriculumCode !== undefined && (typeof curriculumCode !== 'string' || curriculumCode.length > 60 ||
+      !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(curriculumCode)))) return bad(res, 'Choose a subject, available time, teaching format and duration.');
   return rpc(req.supabase, 'request_tutoring_booking', {
     _tutor: tutorId, _student: studentId, _subject: subjectId, _starts_at: startsAt, _duration: duration,
     _mode: mode, _type: type, _notes: notes.trim(),
+    ...(curriculumCode ? { _curriculum: curriculumCode } : {}),
   }, res, next, id => ({ id }), 201);
 }
 
@@ -126,6 +134,8 @@ export function reportBooking(req, res, next) {
 
 export async function listSafetyCases(req, res, next) {
   const status = req.query.status || 'new';
+  const developer = req.query.queue === 'developer';
+  if (developer && req.userRole !== 'superUser') return res.status(403).json({ message: 'Only superusers can access the developer queue.' });
   if (!['all', 'new', 'investigating', 'waiting', 'resolved'].includes(status)) return bad(res, 'Choose a case status.');
   const page = Number(req.query.page || 1);
   if (!Number.isSafeInteger(page) || page < 1 || page > 1000) return bad(res, 'Choose a valid page.');
@@ -137,14 +147,15 @@ export async function listSafetyCases(req, res, next) {
   if (issue !== undefined && (typeof issue !== 'string' || !/^[A-Z]{3}$/.test(issue))) return bad(res, 'Choose a valid issue code.');
   if (req.query.scope !== undefined && req.query.scope !== 'mine') return bad(res, 'Choose a valid ticket assignment filter.');
   try {
-    let query = req.supabase.from('booking_safety_cases').select('id,category,status,created_at,updated_at,reference:case_reference,reporter_kind,issue_code,subject,response_due_at,version,auto_resolved_at', { count: 'exact' });
-    if (status !== 'all') query = query.eq('status', status);
+    let query = req.supabase.from('booking_safety_cases').select('id,category,status,created_at,updated_at,reference:case_reference,reporter_kind,issue_code,subject,response_due_at,version,auto_resolved_at,developer_status', { count: 'exact' });
+    if (developer) query = query.not('developer_status', 'is', null);
+    if (status !== 'all') query = query.eq(developer ? 'developer_status' : 'status', status);
     if (req.query.scope === 'mine') query = query.eq('assigned_to', req.userId);
     if (reporter) query = query.eq('reporter_kind', reporter);
     if (category) query = query.eq('category', category);
     if (issue) query = query.eq('issue_code', issue);
     query = applySupportSearch(query, search);
-    if (req.query.order === 'due') query = query.order('response_due_at');
+    if (!developer && req.query.order === 'due') query = query.order('response_due_at', { nullsFirst: false });
     const { data, count, error } = await query.order('created_at', { ascending: false }).order('id')
       .range((page - 1) * 25, page * 25 - 1).abortSignal(AbortSignal.timeout(15000));
     if (error) return fail(error, res, next);

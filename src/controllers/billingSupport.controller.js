@@ -1,4 +1,5 @@
 import { isBookingSchemaUnavailable } from '../utils/bookingSchema.js';
+import { screenshotArgs, triageArgs } from '../utils/bugReports.js';
 
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 const text = (value, min, max) => typeof value === 'string' && value.trim().length >= min && value.length <= max;
@@ -55,6 +56,15 @@ export const myTickets = route('my_support_tickets', (_body, _params, query) => 
 export const newTicket = route('create_detailed_support_ticket', body => uuid(body.requestId) && ['billing','technical','account','other','bug'].includes(body.category)
   && (body.issue === undefined || text(body.issue,2,30)) && text(body.subject,4,120) && text(body.description,20,2000)
   ? { _request: body.requestId, _category: body.category, _issue: body.issue ?? null, _subject: body.subject, _description: body.description } : null, displayTicketReference);
+export const newMemberBugReport = route('submit_member_bug_report', body => {
+  const screenshot = screenshotArgs(body.screenshot);
+  return screenshot && uuid(body.requestId) && text(body.subject,4,120) && text(body.description,20,2000)
+    ? { _id: body.requestId, _subject: body.subject, _description: body.description, ...screenshot } : null;
+}, displayTicketReference);
+export const triageTicket = route('triage_member_ticket', (body, params) => {
+  const args = triageArgs(body, body.version);
+  return args && uuid(params.id) ? { _ticket: params.id, ...args } : null;
+}, () => ({ saved: true }));
 const ticketArgs = (_body, params) => uuid(params.id) ? { _ticket: params.id } : null;
 export const myTicket = route('my_support_ticket', ticketArgs, ticket => ({ ticket: displayTicketReference(ticket) }));
 export const resolveTicket = route('resolve_support_ticket', ticketArgs, () => ({ status: 'resolved' }));

@@ -4,7 +4,7 @@ import { authorize } from '../middleware/auth.middleware.js';
 import { Router } from 'express';
 import { sendEnquiry, sendSubjectRequest } from '../controllers/site.controller.js';
 import { supportLimiter } from '../middleware/rateLimit.middleware.js';
-import { publicContact,publicOpenings } from '../controllers/siteAdmin.controller.js';
+import { publicContact,publicOpenings,receiveGuestBugReport } from '../controllers/siteAdmin.controller.js';
 import {publicFaqs} from '../controllers/faq.controller.js';
 import { tutorSlots, tutorsAtTime } from '../controllers/booking.controller.js';
 import{publicPlatformSettings}from'../controllers/platformSettings.controller.js';
@@ -17,6 +17,7 @@ router.get('/faqs',publicFaqs);
 router.get('/tutors/:id/availability',tutorSlots);
 router.get('/tutors/availability',tutorsAtTime);
 router.post('/enquiries', supportLimiter, sendEnquiry);
+router.post('/bug-reports', supportLimiter, receiveGuestBugReport);
 router.post('/subject-requests', supportLimiter, sendSubjectRequest);
 // Authentication and the larger, rate-limited JSON parser are installed before the global parser in app.js.
 router.post('/tutor-applications', resolveSavedDocuments, submitApplication);

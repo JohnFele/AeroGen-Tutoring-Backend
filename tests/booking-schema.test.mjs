@@ -22,6 +22,7 @@ test('missing booking metrics do not take down account and application analytics
         abortSignal: async () => ({ data: tables[table] }) };
     },
     rpc(name) {
+      if (name === 'admin_active_accounts') return { abortSignal: async () => ({ data: { live: 1, all: 2 } }) };
       assert.equal(name, 'admin_booking_metrics');
       return { abortSignal: async () => ({ error: { code: 'PGRST202' } }) };
     },
@@ -31,6 +32,7 @@ test('missing booking metrics do not take down account and application analytics
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, {
     users, tutors: [], applications, bookings: [], bookingActivity: [], payments: [], bookingMetricsAvailable: false,
+    activeAccounts: { live: 1, all: 2 },
   });
 });
 

@@ -22,13 +22,16 @@ export const me = async (req, res, next) => {
   }
 };
 
-const profileSelect = `id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, profile_setup_pending, demo_dataset, created_at, updated_at,${tutorApprovalRelation}`;
+const profileSelect = `id, first_name, last_name, email, phone, location, role, auth_provider, bio, is_verified, profile_setup_pending, curriculum_codes, study_level_code, study_grade, study_subject_ids, study_institution, study_programme, study_goals, demo_dataset, created_at, updated_at,${tutorApprovalRelation}`;
 const profileFieldMap = {
   firstName: 'first_name',
   lastName: 'last_name',
   phone: 'phone',
   location: 'location',
   bio: 'bio',
+  studyInstitution: 'study_institution',
+  studyProgramme: 'study_programme',
+  studyGoals: 'study_goals',
 };
 
 const serializeProfile = (profile) => ({
@@ -42,6 +45,13 @@ const serializeProfile = (profile) => ({
   tutorApproved: isApprovedTutor(profile),
   authProvider: profile.auth_provider,
   bio: profile.bio,
+  curriculumCodes: profile.curriculum_codes ?? [],
+  studyLevelCode: profile.study_level_code,
+  studyGrade: profile.study_grade,
+  studySubjectIds: profile.study_subject_ids ?? [],
+  studyInstitution: profile.study_institution,
+  studyProgramme: profile.study_programme,
+  studyGoals: profile.study_goals,
   isVerified: profile.is_verified,
   profileSetupPending: profile.profile_setup_pending,
   isDemo: Boolean(profile.demo_dataset),
@@ -59,11 +69,37 @@ export const updateMe = async (req, res, next) => {
         return res.status(400).json({ message: `${requestField} must be a string.` });
       }
       const value = req.body[requestField].trim();
-      const maximumLength = requestField === 'bio' ? 2000 : 160;
+      const maximumLength = ['bio','studyGoals'].includes(requestField) ? 2000 :
+        ['studyInstitution','studyProgramme'].includes(requestField) ? 150 : 160;
       if (value.length > maximumLength) {
         return res.status(400).json({ message: `${requestField} must be ${maximumLength} characters or fewer.` });
       }
       updates[databaseField] = databaseField === 'bio' ? value : value || null;
+    }
+
+    if (Object.hasOwn(req.body ?? {}, 'curriculumCodes')) {
+      const codes = req.body.curriculumCodes;
+      if (!validCurricula(codes)) {
+        return res.status(400).json({ message: 'Choose valid curricula from the list.' });
+      }
+      updates.curriculum_codes = [...new Set(codes)];
+    }
+    if (Object.hasOwn(req.body ?? {}, 'studyLevelCode')) {
+      const level = req.body.studyLevelCode;
+      if (level !== null && (!validCurricula([level]) || !level)) return res.status(400).json({ message: 'Choose a valid education phase.' });
+      updates.study_level_code = level;
+    }
+    if (Object.hasOwn(req.body ?? {}, 'studyGrade')) {
+      const grade = req.body.studyGrade;
+      if (grade !== null && (!Number.isInteger(grade) || grade < 0 || grade > 12)) return res.status(400).json({ message: 'Choose a valid school grade.' });
+      updates.study_grade = grade;
+    }
+    if (Object.hasOwn(req.body ?? {}, 'studySubjectIds')) {
+      const ids = req.body.studySubjectIds;
+      if (!Array.isArray(ids) || ids.length > 30 || ids.some(id => !Number.isSafeInteger(id) || id < 1)) {
+        return res.status(400).json({ message: 'Choose up to 30 subjects from the list.' });
+      }
+      updates.study_subject_ids = [...new Set(ids)];
     }
 
     if (!Object.keys(updates).length) {
@@ -90,7 +126,7 @@ export const updateMe = async (req, res, next) => {
       .select(profileSelect)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found.' });
-    if (error?.code === '22023' && updates.profile_setup_pending === false) return res.status(400).json({ message: error.message });
+    if (error?.code === '22023') return res.status(400).json({ message: error.message });
     if (error) return next(error);
 
     return res.status(200).json({ message: 'Profile updated successfully.', user: serializeProfile(profile) });
@@ -103,6 +139,81 @@ const preferenceFields = [
   'email_messages', 'email_booking_updates', 'email_payment_updates',
   'push_messages', 'push_booking_updates', 'push_payment_updates',
 ];
+
+export const getTeachingSubjects = async (req, res, next) => {
+  try {
+    const { data, error } = await req.supabase.from('profiles')
+      .select('role,curriculum_codes,teaching_level_codes,tutor_profile:tutor_profiles!tutor_profiles_user_id_fkey(is_approved,updated_at,tutor_subjects(subject_id,curriculum_codes))')
+      .eq('id', req.userId).single();
+    if (error) return next(error);
+    if (!isApprovedTutor(data)) return res.status(403).json({ message: 'Tutor approval required.' });
+    res.set('Cache-Control', 'no-store');
+    return res.json({ curriculumCodes: data.curriculum_codes, levelCodes: data.teaching_level_codes, subjects: data.tutor_profile.tutor_subjects, updatedAt: data.tutor_profile.updated_at });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const validCurricula = codes => Array.isArray(codes) && codes.length <= 20 && codes.every(code =>
+  typeof code === 'string' && code.length <= 60 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(code));
+
+export const getTutorListing = async (req, res, next) => {
+  try {
+    const { data, error } = await req.supabase.from('profiles')
+      .select('role,tutor_profile:tutor_profiles!tutor_profiles_user_id_fkey(is_approved,updated_at,public_name,bio,city,province,teaching_style,years_experience,teaching_modes,hourly_rate,students_per_session)')
+      .eq('id', req.userId).single();
+    if (error) return next(error);
+    if (!isApprovedTutor(data)) return res.status(403).json({ message: 'Tutor approval required.' });
+    res.set('Cache-Control', 'no-store');
+    return res.json(data.tutor_profile);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const saveTutorListing = async (req, res, next) => {
+  try {
+    const { details, updatedAt } = req.body ?? {};
+    if (!details || typeof details !== 'object' || Array.isArray(details) ||
+      typeof updatedAt !== 'string' || !Number.isFinite(Date.parse(updatedAt))) {
+      return res.status(400).json({ message: 'Enter valid teaching details.' });
+    }
+    const { data, error } = await req.supabase.rpc('save_my_tutor_listing', {
+      _details: details, _expected_updated_at: updatedAt,
+    });
+    if (error?.code === '22023') return res.status(400).json({ message: error.message });
+    if (error?.code === '42501') return res.status(403).json({ message: error.message });
+    if (error?.code === 'PT409') return res.status(409).json({ message: error.message });
+    if (error) return next(error);
+    return res.json({ updatedAt: data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const saveTeachingSubjects = async (req, res, next) => {
+  try {
+    const { curriculumCodes, levelCodes, subjects, updatedAt } = req.body ?? {};
+    if (!validCurricula(curriculumCodes) || !Array.isArray(subjects) || subjects.length < 1 || subjects.length > 100 ||
+      subjects.some(row => !Number.isSafeInteger(row?.subject_id) || row.subject_id < 1 || !validCurricula(row.curriculum_codes)) ||
+      (levelCodes !== undefined && !validCurricula(levelCodes)) || typeof updatedAt !== 'string' || !Number.isFinite(Date.parse(updatedAt))) {
+      return res.status(400).json({ message: 'Choose valid curricula and between 1 and 100 teaching subjects.' });
+    }
+    const { data, error } = await req.supabase.rpc('save_my_teaching_subjects', {
+      _curricula: curriculumCodes,
+      ...(levelCodes !== undefined ? { _levels: levelCodes } : {}),
+      _subjects: subjects.map(({ subject_id, curriculum_codes }) => ({ subject_id, curriculum_codes })),
+      _expected_updated_at: updatedAt,
+    });
+    if (error?.code === '22023') return res.status(400).json({ message: error.message });
+    if (error?.code === '42501') return res.status(403).json({ message: error.message });
+    if (error?.code === 'PT409') return res.status(409).json({ message: error.message });
+    if (error) return next(error);
+    return res.json({ updatedAt: data });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 const defaultPreferences = Object.fromEntries(preferenceFields.map((field) => [field, true]));
 

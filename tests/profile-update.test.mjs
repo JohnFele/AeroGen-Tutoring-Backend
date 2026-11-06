@@ -69,3 +69,12 @@ test('onboarding only clears the review flag when all required details are submi
   assert.equal(completed.updates.profile_setup_pending, false);
   assert.equal(completed.res.payload.user.profileSetupPending, false);
 });
+
+test('profile updates store stable curriculum codes and allow clearing the selection', async () => {
+  const { res, updates } = await save({ curriculumCodes: ['caps-ieb', 'cambridge-igcse', 'caps-ieb'] });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(updates, { curriculum_codes: ['caps-ieb', 'cambridge-igcse'] });
+  assert.deepEqual(res.payload.user.curriculumCodes, updates.curriculum_codes);
+  assert.deepEqual((await save({ curriculumCodes: [] })).updates, { curriculum_codes: [] });
+  assert.equal((await save({ curriculumCodes: 'CAPS / NSC · IEB' })).res.statusCode, 400);
+});

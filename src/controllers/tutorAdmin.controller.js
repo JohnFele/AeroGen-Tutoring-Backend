@@ -76,15 +76,16 @@ export const editAdminTutor=async(req,res,next)=>{
 };
 export const adminData=async(req,res,next)=>{
   try {
-    const [users,tutors,metrics,applications]=await Promise.all([
+    const [users,tutors,metrics,applications,activeAccounts]=await Promise.all([
       allRows(req.supabase,'profiles','id,first_name,last_name,email,role,is_verified,demo_dataset,created_at'),
       allRows(req.supabase,'tutor_profiles',tutorColumns,'user_id'),
       req.supabase.rpc('admin_booking_metrics').abortSignal(AbortSignal.timeout(15000)),
       allRows(req.supabase,'tutor_applications','id,user_id,status,highest_qualification,submitted_at,reviewed_at,created_at'),
+      req.supabase.rpc('admin_active_accounts').abortSignal(AbortSignal.timeout(15000)),
     ]);
     if(metrics.error && !isBookingSchemaUnavailable(metrics.error)) throw metrics.error;
     const bookingMetricsAvailable = !metrics.error;
     const bookingMetrics = bookingMetricsAvailable ? metrics.data : { bookings: [], bookingActivity: [], payments: [] };
-    return res.json({users,tutors,...bookingMetrics,applications,bookingMetricsAvailable});
+    return res.json({users,tutors,...bookingMetrics,applications,bookingMetricsAvailable,activeAccounts:activeAccounts.data ?? null});
   } catch(error){return next(error);}
 };

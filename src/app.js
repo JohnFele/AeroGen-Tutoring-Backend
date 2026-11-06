@@ -15,6 +15,7 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.post('/api/v1/site/tutor-applications', applicationLimiter, authorize, platformGate, requireApplicationsOpen, express.json({ limit: '28mb' }));
 app.put('/api/v1/site/tutor-application-draft', authorize, platformGate, express.json({ limit: '28mb' }));
+app.post(['/api/v1/site/bug-reports', '/api/v1/workspace/bug-reports'], express.json({ limit: '3mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(profileReadLimiter);
