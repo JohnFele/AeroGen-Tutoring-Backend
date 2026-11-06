@@ -1,0 +1,495 @@
+{
+  "Fundamental subjects": [
+    [
+      "English/Afrikaans/IsiXhosa (First Additional language)",
+      "Life Orientation",
+      "Mathematics OR Mathematical Literacy"
+    ],
+    [
+      "English/Afrikaans/IsiXhosa (First Additional language)",
+      "Life Orientation",
+      "Mathematics OR Mathematical Literacy"
+    ],
+    [
+      "English/Afrikaans/IsiXhosa (First Additional language)",
+      "Life Orientation",
+      "Mathematics OR Mathematical Literacy"
+    ]
+  ],
+  "Civil Engineering & Building Construction": [
+    [
+      "Construction Planning",
+      "Materials",
+      "Plant and Equipment",
+      "Carpentry and Roof Work (O)*",
+      "Concrete Structures (O)*",
+      "Masonry (O)*",
+      "Physical Science(O)*",
+      "Plumbing (O)*",
+      "Roads (O)*"
+    ],
+    [
+      "Construction Planning",
+      "Materials",
+      "Plant and Equipment",
+      "Carpentry and Roof Work (O)*",
+      "Concrete Structures (O)*",
+      "Masonry (O)*",
+      "Physical Science (O)*",
+      "Plumbing (O)*",
+      "Roads (O)*"
+    ],
+    [
+      "Construction Planning",
+      "Materials",
+      "Construction Supervision",
+      "Carpentry and Roof Work (O)*",
+      "Concrete Structures (O)*",
+      "Masonry (O)*",
+      "Physical Science (O)*",
+      "Plumbing (O)*",
+      "Roads (O)*"
+    ]
+  ],
+  "Drawing Office Practice": [
+    [
+      "Architectural Graphics and Technology",
+      "Civil and Structural Steel work Detailing",
+      "Engineering Graphics and Technology",
+      "Drawing Office Procedures and Techniques (O)*"
+    ],
+    [
+      "Architectural Graphics and Technology",
+      "Civil and Structural Steel work Detailing",
+      "Engineering Graphics and Design",
+      "Drawing Office Procedures and Techniques (O)*"
+    ],
+    [
+      "Architectural Graphics and Technology",
+      "Civil and Structural Steel work Detailing",
+      "Mechanical Draughting and Technology",
+      "Drawing Office Procedures and Techniques (O)*"
+    ]
+  ],
+  "Education and Development": [
+    [
+      "Art and Science of Teaching",
+      "Human and Social Development",
+      "Learning Psychology",
+      "Early Childhood Development (O)*"
+    ],
+    [
+      "Art and Science of Teaching",
+      "Human and Social Development",
+      "Learning Psychology",
+      "Early Childhood Development (O)*"
+    ],
+    [
+      "Art and Science of Teaching",
+      "Human and Social Development",
+      "Learning Psychology",
+      "Early Childhood Development (O)*"
+    ]
+  ],
+  "Electrical Infrastructure Construction": [
+    [
+      "Electrical Principles and Practice",
+      "Electronic Control and Digital Electronics",
+      "Workshop Practice",
+      "Electrical Systems and Construction (O)*",
+      "Physical Science (O)*",
+      "Renewable Energy Technologies (O)*"
+    ],
+    [
+      "Electrical Principles and Practice",
+      "Electronic Control and Digital Electronics",
+      "Electrical Workmanship",
+      "Electrical Systems and Construction (O)*",
+      "Physical Science (O)*",
+      "Renewable Energy Technologies (O)*"
+    ],
+    [
+      "Electrical Principles and Practice",
+      "Electronic Control and Digital Electronics",
+      "Electrical Workmanship",
+      "Electrical Systems and Construction (O)*",
+      "Physical Science(O)*",
+      "Renewable Energy Technologies (O)*"
+    ]
+  ],
+  "Engineering and Related Design": [
+    [
+      "Engineering Fundamentals",
+      "Engineering Systems",
+      "Engineering Technology",
+      "Automotive Repair & Maintenance (O)*",
+      "Fitting and Turning(O) *",
+      "Physical Science (O)*",
+      "Refrigeration Principles (O)*",
+      "Welding (O)*"
+    ],
+    [
+      "Engineering Practice and Maintenance",
+      "Engineering Graphics and Design",
+      "Materials Technology",
+      "Automotive Repair & Maintenance(O)*",
+      "Engineering Fabrication- Boiler making (O)*",
+      "Engineering Fabrication – Sheet Metal Work(O)*",
+      "Fitting and Turning(O)*",
+      "Physical Science (O)*",
+      "Refrigeration Practice (O)*",
+      "Welding (O)*"
+    ],
+    [
+      "Engineering Processes",
+      "Applied Engineering Technology",
+      "Professional Engineering Practice",
+      "Automotive Repair & Maintenance(O)*",
+      "Engineering FabricationBoiler making (O)*",
+      "Engineering Fabrication – Sheet Metal Work(O)*",
+      "Fitting and Turning(O)*",
+      "Physical Science (O)*",
+      "Refrigeration and Air-conditioning Processes (O)*"
+    ]
+  ],
+  "Finance, Economics and Accounting": [
+    [
+      "Applied Accounting",
+      "Economic Environment",
+      "Financial Management",
+      "New Venture Creation (O)*"
+    ],
+    [
+      "Applied Accounting",
+      "Economic Environment",
+      "Financial Management",
+      "New Venture Creation (O)*"
+    ],
+    [
+      "Applied Accounting",
+      "Economic Environment",
+      "Financial Management",
+      "New Venture Creation (O)*"
+    ]
+  ],
+  "Hospitality": [
+    [
+      "Client Services and Human Relations",
+      "Food Preparation",
+      "Hospitality Generics",
+      "Hospitality Services (O)*"
+    ],
+    [
+      "Client Services and Human Relations",
+      "Food Preparation",
+      "Hospitality Generics",
+      "Hospitality Services (O)*"
+    ],
+    [
+      "Client Services and Human Relations",
+      "Food Preparation",
+      "Hospitality Generics",
+      "Hospitality Services (O)*"
+    ]
+  ],
+  "Information Technology and Computer Science (Software Design and Development)": [
+    [
+      "Electronics",
+      "Introduction to Information Systems",
+      "Introduction to Systems Development",
+      "Contact Centre Operations(O)*",
+      "Multimedia Basics(O)*"
+    ],
+    [
+      "Computer Hardware and Software",
+      "Systems Analysis and Design",
+      "Principles of Computer Programming",
+      "Contact Centre Operations(O)*",
+      "Multimedia Basics(O)*"
+    ],
+    [
+      "Data Communication and Networking",
+      "Systems Analysis and Design",
+      "Computer Programming",
+      "Contact Centre Operations(O)*",
+      "Multimedia Basics(O)*"
+    ]
+  ],
+  "Information Technology and Computer Science (Programming and Robotics)": [
+    [
+      "Electronics and Digital Concepts for Robotics",
+      "Robotics Fundamental",
+      "Basic Principles of Computer Programming and Computer Literacy",
+      "Physical Science (O)*",
+      "Engineering Graphics and Technology (O)*",
+      "Electrotechnology (O)*",
+      "Mechatronic Systems (O) *",
+      "Instrumentation Technology (O)*"
+    ],
+    [
+      "Electronics and Digital Concepts for Robotics",
+      "Introduction to Robotics",
+      "Introduction to Technical Programming",
+      "Physical Science (O)*",
+      "Engineering Graphics and Design (O)*",
+      "Electrotechnology (O)*",
+      "Mechatronic Systems (O) *",
+      "Instrumentation Technology (O)*"
+    ],
+    [
+      "Electronics and Digital Concepts for Robotics",
+      "Robotics and Industrial Automation",
+      "Technical Programming",
+      "Physical Science (O)*",
+      "Mechanical Draughting and Technology (O)*",
+      "Electrotechnology (O)*",
+      "Mechatronic Systems (O) *",
+      "Instrumentation Technology (O)*"
+    ]
+  ],
+  "Management": [
+    [
+      "Financial Management",
+      "Management Practice",
+      "Operations Management",
+      "Entrepreneurship (O) *"
+    ],
+    [
+      "Financial Management",
+      "Management Practice",
+      "Operations Management",
+      "Project Management (O)*"
+    ],
+    [
+      "Financial Management",
+      "Management Practice",
+      "Operations Management",
+      "Project Management (O)*"
+    ]
+  ],
+  "Marketing": [
+    [
+      "Advertising & Promotions",
+      "Marketing",
+      "Marketing Communication",
+      "Consumer Behaviour (O)*",
+      "Contact Centre Operations(O)*",
+      "Graphic Design (O)*",
+      "Wholesale and Retail(O)*"
+    ],
+    [
+      "Advertising & Promotions",
+      "Marketing",
+      "Marketing Communication",
+      "Consumer Behaviour (O)*",
+      "Contact Centre Operations(O)",
+      "Graphic Design (O)*",
+      "Wholesale and Retail(O)*"
+    ],
+    [
+      "Advertising & Promotions",
+      "Marketing",
+      "Marketing Communication",
+      "Consumer Behaviour (O)*",
+      "Contact Centre Operations(O)*",
+      "Graphic Design (O)*",
+      "Wholesale and Retail(O)*"
+    ]
+  ],
+  "Mechatronics": [
+    [
+      "Electro-technology",
+      "Introduction to Computers",
+      "Manual Manufacturing",
+      "Mechatronic Systems (O)*"
+    ],
+    [
+      "Electro-technology",
+      "Stored Programme Systems",
+      "Machine Manufacturing",
+      "Mechatronic Systems (O)*"
+    ],
+    [
+      "Electro-technology",
+      "Stored Programme Systems",
+      "Computer-Integrated Manufacturing",
+      "Mechatronic Systems (O)*"
+    ]
+  ],
+  "Office Administration": [
+    [
+      "Business Practice",
+      "Office Data Processing",
+      "Office Practice",
+      "2nd Language (O)*",
+      "Applied Accounting (O)*",
+      "New Venture Creation(O)*"
+    ],
+    [
+      "Business Practice",
+      "Office Data Processing",
+      "Office Practice",
+      "2nd Language (O)*",
+      "Applied Accounting (O)*",
+      "New Venture Creation(O)*"
+    ],
+    [
+      "Business Practice",
+      "Office Data Processing",
+      "Office Practice",
+      "2nd Language (O)*",
+      "Applied Accounting (O)*",
+      "New Venture Creation(O)*",
+      "Personal Assistance L4 (O)*"
+    ]
+  ],
+  "Primary Agriculture": [
+    [
+      "Animal Production",
+      "Plant Production",
+      "Soil Science",
+      "Agri-business (O)*"
+    ],
+    [
+      "Animal Production",
+      "Plant Production",
+      "Soil Science",
+      "Agri-business (O)*"
+    ],
+    [
+      "Animal Production",
+      "Advanced Plant Production",
+      "Farm Planning and Mechanisation",
+      "Agri-business (O)*"
+    ]
+  ],
+  "Primary Health": [
+    [
+      "Public Health",
+      "The Human Body and Mind",
+      "The South African Health Care System",
+      "Community Oriented Primary Care (O)*"
+    ],
+    [
+      "Public Health",
+      "The Human Body and Mind",
+      "The South African Health Care System",
+      "Community Oriented Primary Care (O)*"
+    ],
+    [
+      "Public Health",
+      "The Human Body and Mind",
+      "The South African Health Care System",
+      "Community Oriented Primary Care (O)*"
+    ]
+  ],
+  "Process Instrumentation": [
+    [
+      "Electronic Control and Digital Electronics",
+      "Engineering Fundamentals",
+      "Physical Science",
+      "Instrumentation Technology (O)*"
+    ],
+    [
+      "Electronic Control and Digital Electronics",
+      "Engineering Practice and Maintenance",
+      "Physical Science",
+      "Instrumentation Technology (O)*"
+    ],
+    [
+      "Electronic Control and Digital Electronics",
+      "Engineering Processes",
+      "Physical Science",
+      "Instrumentation Technology (O)*"
+    ]
+  ],
+  "Process Plant Operations": [
+    [
+      "Engineering Fundamentals",
+      "Physical Science",
+      "Process Technology",
+      "Process Chemistry (O)*",
+      "Pulp and Papermaking Technology (O)*"
+    ],
+    [
+      "Process Control",
+      "Physical Science",
+      "Process Technology",
+      "Process Chemistry (O)*",
+      "Pulp and Papermaking Technology (O)*"
+    ],
+    [
+      "Process Control",
+      "Physical Science",
+      "Process Technology",
+      "Process Chemistry (O)*",
+      "Pulp and Papermaking Technology (O)*"
+    ]
+  ],
+  "Safety in Society": [
+    [
+      "Introduction to Governance",
+      "Introduction to Law",
+      "Principles of Criminal Justice",
+      "Criminology (O)*",
+      "Introduction to Policing(O)* Practices(O)*"
+    ],
+    [
+      "Governance",
+      "Criminal Law",
+      "Criminal Justice Structures and Mandates",
+      "Criminology (O)*",
+      "Theory of Policing Practices (O)*"
+    ],
+    [
+      "Governance",
+      "Law of Procedures and Evidence",
+      "Criminal Justice Process",
+      "Criminology (O)*",
+      "Applied Policing (O)*"
+    ]
+  ],
+  "Tourism": [
+    [
+      "Client Services and Human Relations",
+      "Science of Tourism",
+      "Sustainable Tourism in SA",
+      "Tourism Operations (O)*"
+    ],
+    [
+      "Client Services and Human Relations",
+      "Science of Tourism",
+      "Sustainable Tourism in SA and Regional Travel",
+      "Tourism Operations (O)*"
+    ],
+    [
+      "Client Services and Human Relations",
+      "Science of Tourism",
+      "Sustainable Tourism in SA and International Travel",
+      "Tourism Operations (O)*"
+    ]
+  ],
+  "Transport and Logistics": [
+    [
+      "Freight Logistics",
+      "Transport Economics",
+      "Transport Operations",
+      "Entrepreneurship(O)*",
+      "New Venture Creation(O)*"
+    ],
+    [
+      "Freight Logistics",
+      "Transport Economics",
+      "Transport Operations",
+      "Project Management(O)*",
+      "New Venture Creation(O)*"
+    ],
+    [
+      "Freight Logistics",
+      "Transport Economics",
+      "Transport Operations",
+      "Project Management(O)*",
+      "New Venture Creation(O)*"
+    ]
+  ]
+}
