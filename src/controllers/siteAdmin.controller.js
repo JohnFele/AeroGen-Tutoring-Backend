@@ -56,7 +56,7 @@ export function createEnquiryHandler({getClient=createPublicSupabaseClient,getCo
   return async(req,res,next)=>{
     let input;try{input=validateEnquiry(bugReport?{...req.body,category:'bug'}:req.body)}catch(error){return res.status(400).json({message:error.message})}
     const screenshot=bugReport?screenshotArgs(req.body.screenshot):null;
-    if(bugReport&&!screenshot)return res.status(400).json({message:'Choose a PNG, JPEG or WebP screenshot up to 2 MB.'});
+    if(bugReport&&!screenshot)return res.status(400).json({message:'Choose a JPG/JPEG (including JPS), PNG, WebP, GIF or BMP screenshot up to 2 MB.'});
     try{
       const client=getClient();
       const args={_id:input.id,_first_name:input.firstName,_last_name:input.lastName,_email:input.email,_message:input.message};

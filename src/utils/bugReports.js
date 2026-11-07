@@ -3,15 +3,20 @@ const maxBase64Length = 4 * Math.ceil(screenshotLimit / 3);
 
 export function screenshotArgs(value) {
   if (value === undefined || value === null) return { _mime: null, _base64: null };
-  if (typeof value !== 'string' || value.length > maxBase64Length + 32) return null;
-  const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  if (typeof value !== 'string' || value.length > maxBase64Length + 48) return null;
+  const match = /^data:(image\/(?:png|x-png|jpeg|jpg|pjpeg|jps|x-jps|webp|gif|bmp|x-ms-bmp));base64,([A-Za-z0-9+/]+={0,2})$/i.exec(value);
   if (!match || match[2].length > maxBase64Length || match[2].length % 4 !== 0) return null;
-  const [, mime, base64] = match;
+  const [, declaredMime, base64] = match;
+  const aliases = { 'image/jpg': 'image/jpeg', 'image/pjpeg': 'image/jpeg', 'image/jps': 'image/jpeg',
+    'image/x-jps': 'image/jpeg', 'image/x-png': 'image/png', 'image/x-ms-bmp': 'image/bmp' };
+  const mime = aliases[declaredMime.toLowerCase()] || declaredMime.toLowerCase();
   const bytes = Buffer.from(base64, 'base64');
-  if (bytes.length < 12 || bytes.length > screenshotLimit) return null;
+  if (bytes.length < 12 || bytes.length > screenshotLimit || bytes.toString('base64') !== base64) return null;
   const valid = mime === 'image/png' ? bytes.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
     : mime === 'image/jpeg' ? bytes.subarray(0, 3).toString('hex') === 'ffd8ff'
-      : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+      : mime === 'image/gif' ? ['GIF87a', 'GIF89a'].includes(bytes.toString('latin1', 0, 6))
+        : mime === 'image/bmp' ? bytes.length >= 26 && bytes.toString('latin1', 0, 2) === 'BM'
+          : bytes.toString('latin1', 0, 4) === 'RIFF' && bytes.toString('latin1', 8, 12) === 'WEBP';
   return valid ? { _mime: mime, _base64: base64 } : null;
 }
 
