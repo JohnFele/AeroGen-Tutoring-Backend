@@ -26,6 +26,10 @@ const simulation = body => uuid(body.requestId) && typeof body.success === 'bool
 const paymentArgs = body => ({ _succeeds: body.success, _request: body.requestId });
 const displayTicketReference = ({ case_reference, category_reference, ...ticket }) => ({ ...ticket, reference: case_reference || category_reference || ticket.reference });
 export const billingOverview = route('my_account_billing', () => ({}));
+const statementDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  && Number(value.slice(0,4)) > 0 && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+export const earningsStatement = route('my_tutor_earnings_statement', (_body, _params, query) =>
+  statementDate(query.from) && statementDate(query.to) ? { _from: query.from, _to: query.to } : null);
 export const changePlan = route('change_membership', body => simulation(body) && text(body.plan, 2, 30)
   ? { _plan: body.plan, ...paymentArgs(body) } : null);
 const cents = value => Number.isSafeInteger(value) && value >= 0 && value <= 2147483647;
@@ -49,6 +53,9 @@ export const tutorPayout = route('request_tutor_payout', body => simulation(body
 export const lessonOutcome = route('confirm_lesson_outcome', (body, params) => uuid(params.id) && typeof body.happened === 'boolean'
   && text(body.reason || '', body.happened ? 0 : 10, 2000)
   ? { _booking: params.id, _happened: body.happened, _reason: body.reason || '' } : null, status => ({ status }));
+export const lessonRating = route('rate_completed_lesson', (body, params) => uuid(params.id)
+  && Number.isInteger(body.rating) && body.rating >= 1 && body.rating <= 5
+  ? { _booking: params.id, _rating: body.rating } : null);
 export const myTickets = route('my_support_tickets', (_body, _params, query) => {
   const page = Number(query.page ?? 1);
   return Number.isSafeInteger(page) && page >= 1 && page <= 10000 ? { _offset: (page - 1) * 25 } : null;
@@ -78,6 +85,6 @@ export const replyTicket = route('reply_support_ticket', (body, params) => uuid(
   ? { _ticket: params.id, _body: body.message, _request: body.requestId } : null, () => ({ saved: true }));
 export const updateTicket = route('update_support_ticket', (body, params) => uuid(params.id) && Number.isSafeInteger(body.version)
   && body.version > 0 && ['investigating','waiting','resolved'].includes(body.status) && text(body.reply || '',0,2000)
-  && text(body.outcome || '',0,2000) && [undefined,'','release','refund'].includes(body.settlement)
+  && text(body.outcome || '',0,2000) && [undefined,'','release','refund','happened','not_happened'].includes(body.settlement)
   ? { _ticket: params.id, _version: body.version, _status: body.status, _reply: body.reply || '', _outcome: body.outcome || '', _settlement: body.settlement || null } : null,
 () => ({ saved: true }));

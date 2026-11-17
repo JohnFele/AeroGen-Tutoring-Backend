@@ -160,7 +160,7 @@ const validCurricula = codes => Array.isArray(codes) && codes.length <= 20 && co
 export const getTutorListing = async (req, res, next) => {
   try {
     const { data, error } = await req.supabase.from('profiles')
-      .select('role,tutor_profile:tutor_profiles!tutor_profiles_user_id_fkey(is_approved,updated_at,public_name,bio,city,province,teaching_style,years_experience,teaching_modes,hourly_rate,students_per_session)')
+      .select('role,tutor_profile:tutor_profiles!tutor_profiles_user_id_fkey(is_approved,updated_at,public_name,bio,city,province,teaching_style,years_experience,teaching_modes,hourly_rate,online_hourly_rate,in_person_hourly_rate,students_per_session)')
       .eq('id', req.userId).single();
     if (error) return next(error);
     if (!isApprovedTutor(data)) return res.status(403).json({ message: 'Tutor approval required.' });

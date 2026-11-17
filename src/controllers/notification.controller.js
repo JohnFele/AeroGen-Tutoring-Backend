@@ -28,6 +28,15 @@ export async function deleteNotification(req,res,next){
  if(!uuid.test(req.params.id))return res.status(400).json({message:'Invalid notification ID.'});
  try{const{data,error}=await req.supabase.from('notifications').delete().eq('id',req.params.id).eq('user_id',req.userId).select('id').maybeSingle().abortSignal(timeout());if(error)throw error;return data?res.json({message:'Notification deleted.'}):res.status(404).json({message:'Notification not found.'})}catch(error){next(error)}
 }
+export async function deleteNotifications(req,res,next){
+ const ids=req.body?.ids;
+ if(!Array.isArray(ids)||!ids.length||ids.length>500||ids.some(id=>typeof id!=='string'||!uuid.test(id)))return res.status(400).json({message:'Select between 1 and 500 valid notifications.'});
+ try{
+  const{data,error}=await req.supabase.from('notifications').delete().eq('user_id',req.userId).in('id',[...new Set(ids)]).select('id,read_at').abortSignal(timeout());
+  if(error)throw error;
+  res.set('Cache-Control','no-store');return res.json({deleted:data});
+ }catch(error){next(error)}
+}
 export async function readConversation(req,res,next){
  const messageId=req.body?.lastMessageId;
  if(!uuid.test(req.params.id)||messageId!==undefined&&!uuid.test(messageId))return res.status(400).json({message:'Choose a valid conversation and message.'});

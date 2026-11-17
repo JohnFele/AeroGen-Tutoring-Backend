@@ -17,13 +17,22 @@ select public.save_booking_availability((select jsonb_agg(jsonb_build_object('we
   from generate_series(1,7) d),false);
 reset role;
 
-insert into public.bookings(id,student_id,tutor_id,proposed_by,starts_at,ends_at,teaching_mode,duration_minutes,hourly_rate,total_amount)
-select ('e6200000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,
-  'e6100000-0000-4000-8000-000000000001','e6100000-0000-4000-8000-000000000002',
-  case when i=2 then 'e6100000-0000-4000-8000-000000000002'::uuid else 'e6100000-0000-4000-8000-000000000001'::uuid end,
-  (private.booking_local_today()+i+2+time '10:00') at time zone 'Africa/Johannesburg',
-  (private.booking_local_today()+i+2+time '11:00') at time zone 'Africa/Johannesburg',
-  'online',60,400,case when i=3 then 200 else 400 end from generate_series(1,3) i;
+do $$
+declare proposer uuid;
+begin
+  for i in 1..3 loop
+    proposer := case when i=2 then 'e6100000-0000-4000-8000-000000000002'::uuid
+      else 'e6100000-0000-4000-8000-000000000001'::uuid end;
+    perform set_config('request.jwt.claim.sub',proposer::text,true);
+    insert into public.bookings(id,student_id,tutor_id,proposed_by,starts_at,ends_at,teaching_mode,duration_minutes,hourly_rate,total_amount)
+    values (('e6200000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,
+      'e6100000-0000-4000-8000-000000000001','e6100000-0000-4000-8000-000000000002',proposer,
+      (private.booking_local_today()+i+2+time '10:00') at time zone 'Africa/Johannesburg',
+      (private.booking_local_today()+i+2+time '11:00') at time zone 'Africa/Johannesburg',
+      'online',60,400,case when i=3 then 200 else 400 end);
+  end loop;
+end;
+$$;
 
 set local role authenticated;
 do $$
@@ -42,31 +51,29 @@ begin
   end if;
   perform public.respond_to_tutoring_booking(booking,'accept');
   perform public.respond_to_tutoring_booking(booking,'accept');
-  if (select count(*) from public.notifications where title='You accepted the booking' and data->>'bookingId'=booking::text
-    and body like '%student still needs to finish checkout%' and body not like '%R170%')<>1 then
-    raise exception 'Tutor acceptance notice was duplicated or contained student checkout details';
+  if exists(select 1 from public.notifications where title='You accepted the booking' and data->>'bookingId'=booking::text) then
+    raise exception 'Tutor received a notification for their own acceptance';
   end if;
 
   perform set_config('request.jwt.claim.sub',student::text,true);
-  if not exists(select 1 from public.notifications where title='Booking request sent' and data->>'bookingId'=booking::text
-    and body like '%Tutor Lee%when they respond%') or
-    not exists(select 1 from public.notifications where title='Your booking request was accepted' and data->>'bookingId'=booking::text
-    and body like '%credit is reserved%R170.00%') or
+  if exists(select 1 from public.notifications where title='Booking request sent' and data->>'bookingId'=booking::text) or
+    (select count(*) from public.notifications where title='Your booking request was accepted' and data->>'bookingId'=booking::text
+    and body like '%credit is reserved%R170.00%') <> 1 or
     not exists(select 1 from public.notifications where title='Your tutor proposed a lesson' and data->>'bookingId'=proposal::text
     and body like '%Tutor Lee%accept or decline%') then
-    raise exception 'Student did not receive their own request, funding, and proposal notices';
+    raise exception 'Student did not receive exactly the counterpart acceptance and proposal notices';
   end if;
   perform public.respond_to_tutoring_booking(proposal,'decline');
   perform public.checkout_booking(booking,'package',true,request_key);
   perform public.checkout_booking(booking,'package',true,request_key);
-  if (select count(*) from public.notifications where title='Your lesson is funded' and data->>'bookingId'=booking::text)<>1 then
-    raise exception 'Student did not get exactly one payment success notice';
+  if exists(select 1 from public.notifications where title='Your lesson is funded' and data->>'bookingId'=booking::text) then
+    raise exception 'Student received a notification for their own checkout';
   end if;
   perform public.respond_to_tutoring_booking(booking,'cancel');
-  if not exists(select 1 from public.notifications where title='You cancelled the lesson' and data->>'bookingId'=booking::text) or
-    not exists(select 1 from public.notifications where title='Your lesson refund was recorded'
+  if exists(select 1 from public.notifications where title='You cancelled the lesson' and data->>'bookingId'=booking::text) or
+    exists(select 1 from public.notifications where title='Your lesson refund was recorded'
       and kind='payment' and data->>'tab'='payments' and body like '%credit was returned%top-up was refunded%') then
-    raise exception 'Student cancellation and refund notices are missing';
+    raise exception 'Student received a notification for their own cancellation or its automatic refund';
   end if;
 
   perform set_config('request.jwt.claim.sub',tutor::text,true);

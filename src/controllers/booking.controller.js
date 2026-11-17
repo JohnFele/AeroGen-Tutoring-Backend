@@ -4,7 +4,7 @@ import { applySupportSearch, parseSupportSearch } from '../utils/supportSearch.j
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const durations = [30, 60, 90, 120];
-const categories = ['safety', 'conduct', 'lesson_quality', 'other'];
+const categories = ['safety', 'conduct', 'lesson_quality', 'other', 'attendance'];
 const bad = (res, message) => res.status(400).json({ message });
 
 function fail(error, res, next) {
@@ -57,6 +57,10 @@ export function bookableStudents(req, res, next) {
   res.set('Cache-Control', 'no-store');
   return rpc(req.supabase, 'search_bookable_students', { _query: term }, res, next, students => ({ students }));
 }
+export function myTutors(req,res,next){
+ res.set('Cache-Control','no-store');
+ return rpc(req.supabase,'my_student_tutors',{},res,next,tutors=>({tutors}));
+}
 
 export function bookingHours(req, res, next) {
   res.set('Cache-Control', 'no-store');
@@ -103,18 +107,28 @@ export function saveBookingHours(req, res, next) {
 }
 
 export function requestBooking(req, res, next) {
-  const { tutorId, studentId = req.userId, subjectId, startsAt, duration, mode, type, notes = '', curriculumCode } = req.body || {};
+  const { tutorId, studentId = req.userId, subjectId, startsAt, duration, mode, type, notes = '', curriculumCode, series } = req.body || {};
   if (!uuid.test(tutorId) || !uuid.test(studentId) || !Number.isSafeInteger(subjectId) || subjectId < 1 ||
     typeof startsAt !== 'string' || !Number.isFinite(Date.parse(startsAt)) || !durations.includes(duration) ||
     !['online', 'in-person'].includes(mode) || !['individual', 'small-group', 'medium-group'].includes(type) ||
     typeof notes !== 'string' || notes.length > 2000 ||
     (curriculumCode !== undefined && (typeof curriculumCode !== 'string' || curriculumCode.length > 60 ||
       !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(curriculumCode)))) return bad(res, 'Choose a subject, available time, teaching format and duration.');
-  return rpc(req.supabase, 'request_tutoring_booking', {
+  if(series && (!['daily','weekly','monthly'].includes(series.frequency)||!Number.isInteger(series.count)||series.count<2||series.count>12||!uuid.test(series.requestId)))return bad(res,'Choose 2 to 12 daily, weekly or monthly lessons.');
+  return rpc(req.supabase, series ? 'request_recurring_tutoring_booking' : 'request_tutoring_booking', {
     _tutor: tutorId, _student: studentId, _subject: subjectId, _starts_at: startsAt, _duration: duration,
     _mode: mode, _type: type, _notes: notes.trim(),
-    ...(curriculumCode ? { _curriculum: curriculumCode } : {}),
-  }, res, next, id => ({ id }), 201);
+    ...(curriculumCode || series ? { _curriculum: curriculumCode || null } : {}),
+    ...(series?{_frequency:series.frequency,_count:series.count,_request:series.requestId}:{}),
+  }, res, next, value => series ? value : { id:value }, 201);
+}
+
+export function recurringBookingOptions(req,res,next){
+ const {tutorId,studentId=req.userId,startsAt,frequency}=req.query;
+ const duration=Number(req.query.duration),count=Number(req.query.count);
+ if(!uuid.test(tutorId)||!uuid.test(studentId)||typeof startsAt!=='string'||!Number.isFinite(Date.parse(startsAt))||!durations.includes(duration)||!['daily','weekly','monthly'].includes(frequency)||!Number.isInteger(count)||count<2||count>12)return bad(res,'Choose participants, an available start and 2 to 12 repetitions.');
+ res.set('Cache-Control','no-store');
+ return rpc(req.supabase,'recurring_booking_options',{_tutor:tutorId,_student:studentId,_starts:startsAt,_duration:duration,_frequency:frequency,_count:count},res,next,occurrences=>({occurrences}));
 }
 
 export function respondToBooking(req, res, next) {

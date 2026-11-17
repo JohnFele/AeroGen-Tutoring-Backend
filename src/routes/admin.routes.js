@@ -11,6 +11,7 @@ import { listSafetyCases, openSafetyCase, reviewSafetyCase } from '../controller
 import { adminSupportCheckIn, adminSupportProgress, adminTicket, triageTicket, updateTicket } from '../controllers/billingSupport.controller.js';
 import { downloadBugScreenshot } from '../utils/bugReports.js';
 import { learningClearance } from '../controllers/learning.controller.js';
+import { adminLibrary,saveLibraryItem,archiveLibraryItem } from '../controllers/resources.controller.js';
 const router=Router();
 router.use(authorize,authorizeRole(['admin','superUser']));
 router.use((req,res,next)=>{res.set('Cache-Control','no-store');next();});
@@ -45,6 +46,10 @@ router.patch('/openings/:id',saveOpening);
 router.delete('/openings/:id',deleteOpening);
 router.get('/enquiries',listEnquiries);
 router.get('/faqs',listFaqs);
+router.get('/resources',adminLibrary);
+router.post('/resources',saveLibraryItem);
+router.patch('/resources/:id',saveLibraryItem);
+router.delete('/resources/:id',archiveLibraryItem);
 router.post('/faqs',saveFaq);
 router.patch('/faqs/:id',saveFaq);
 router.delete('/faqs/:id',deleteFaq);

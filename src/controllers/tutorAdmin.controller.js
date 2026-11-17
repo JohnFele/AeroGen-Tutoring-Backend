@@ -4,7 +4,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const stringLimits = { public_name: 160, bio: 4000, city: 160, province: 160, qualification: 250, institution: 250, certifications: 2000, teaching_style: 4000, students_per_session: 20, avatar_url: 2048 };
 const boolFields = new Set(['is_approved','is_accepting_students','is_featured']);
 const arrayFields = new Set(['student_age_groups','availability_slots','teaching_modes']);
-const numericFields = { hourly_rate: [1,10000], years_experience: [0,80], year_completed: [1900,new Date().getFullYear()] };
+const numericFields = { hourly_rate: [1,10000], online_hourly_rate:[1,10000], in_person_hourly_rate:[1,10000], years_experience: [0,80], year_completed: [1900,new Date().getFullYear()] };
 
 export function validateTutorEdit(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(key => !['changes','subjectIds','expectedUpdatedAt'].includes(key))) throw new Error('Send tutor changes, subject IDs and the last update timestamp.');
