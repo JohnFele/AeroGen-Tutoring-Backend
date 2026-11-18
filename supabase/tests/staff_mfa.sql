@@ -21,7 +21,7 @@ do $$ begin
   if private.is_platform_admin() is distinct from false then raise exception 'AAL1 admin accepted'; end if;
 end $$;
 
-select set_config('request.jwt.claims','{"sub":"c3200000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims',('{"sub":"c3200000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}'::jsonb || jsonb_build_object('amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint))))::text,true);
 do $$ begin
   if not private.is_platform_admin() then raise exception 'Verified admin rejected'; end if;
   if not exists(select 1 from public.profiles where id='c3200000-0000-4000-8000-000000000002') then
@@ -30,7 +30,7 @@ do $$ begin
 end $$;
 
 select set_config('request.jwt.claim.sub','c3200000-0000-4000-8000-000000000002',true);
-select set_config('request.jwt.claims','{"sub":"c3200000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2","user_metadata":{"role":"superUser"}}',true);
+select set_config('request.jwt.claims',('{"sub":"c3200000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2","user_metadata":{"role":"superUser"}}'::jsonb || jsonb_build_object('amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint))))::text,true);
 do $$ begin
   if private.is_platform_admin() then raise exception 'MFA or editable metadata granted a student admin rights'; end if;
 end $$;

@@ -1,6 +1,6 @@
 begin;
 -- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
-select set_config('request.jwt.claims','{"aal":"aal2"}',true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)))::text,true);
 -- No committed changes, provider calls, emails, or application documents.
 update public.platform_settings set maintenance=false where id;
 do $$
@@ -8,7 +8,7 @@ declare conversation uuid; sender uuid; recipient uuid; message_id uuid; alert_i
 begin
   select cm.conversation_id,cm.user_id,other.user_id into conversation,sender,recipient from public.conversation_members cm join public.conversation_members other on other.conversation_id=cm.conversation_id and other.user_id<>cm.user_id join public.profiles p on p.id=cm.user_id where p.demo_dataset is not null order by cm.user_id limit 1;
   if conversation is null then raise exception 'Demo conversation required'; end if;
-  perform set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',sender,'role','authenticated')::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',sender,'role','authenticated')::text,true);
   perform set_config('test.notification_sender',sender::text,true);perform set_config('test.notification_recipient',recipient::text,true);
   insert into public.user_notification_preferences(user_id,push_messages) values(recipient,false) on conflict(user_id) do update set push_messages=false;
   select version into version_before from public.workspace_signals where user_id=recipient;
@@ -51,7 +51,7 @@ begin
   perform public.submit_contact_enquiry(enquiry,'Notification','Test','notification-flow@example.test','general','Rollback-only enquiry notification test.');
   if (select count(*) from public.notifications where data->>'enquiryId'=enquiry::text)<>(select count(*) from public.profiles where role in ('admin','superUser')) then raise exception 'Admins missing enquiry'; end if;
 end; $$;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',current_setting('test.notification_sender'),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',current_setting('test.notification_sender'),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare target uuid:=current_setting('test.notification_alert')::uuid; before_version bigint; begin
   if exists(select 1 from public.workspace_signals where user_id<>(select auth.uid())) then raise exception 'Other workspace signal visible'; end if;
@@ -66,7 +66,7 @@ do $$ declare target uuid:=current_setting('test.notification_alert')::uuid; bef
   if (select version from public.workspace_signals where user_id=(select auth.uid()))<=before_version then raise exception 'Read change not signalled'; end if;
 end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',current_setting('test.notification_recipient'),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',current_setting('test.notification_recipient'),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare before_version bigint; begin
   select version into before_version from public.workspace_signals where user_id=(select auth.uid());

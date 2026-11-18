@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createCorsOptions, normalizeOrigins } from '../src/config/cors.config.js';
 import { createApp } from '../src/app.js';
-import { authorizeRole, requireTutorApproval } from '../src/middleware/auth.middleware.js';
+import { createAuthorize, authorizeRole, requireTutorApproval } from '../src/middleware/auth.middleware.js';
 
 const cors = origins => createCorsOptions({NODE_ENV:'production',FRONTEND_ORIGINS_PROD:origins});
 const decision = (options, origin) => new Promise(resolve => options.origin(origin,(error,allowed)=>resolve({error,allowed})));
@@ -53,6 +53,19 @@ test('HTTP CORS rejection is a generic 403, preflight works, and protected error
 });
 
 function response() {return {code:200,status(code){this.code=code;return this;},json(body){this.body=body;return this;}};}
+
+test('verified tokens still require a live, owned session within the 30-day application window', async () => {
+  const token=`header.${Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url')}.signature`;
+  for(const valid of [true,false]) {
+    let passed=false;const security={valid,admin_verified:valid,expires_at:'2026-12-01T00:00:00Z'};
+    const handler=createAuthorize(()=>({auth:{getUser:async()=>({data:{user:{id:'owner'}}})},rpc(name){assert.equal(name,'my_session_security');return {abortSignal:async()=>({data:security})};}}));
+    const req={headers:{authorization:`Bearer ${token}`}},res=response();
+    await handler(req,res,()=>{passed=true;});
+    assert.equal(passed,valid);
+    if(valid){assert.equal(req.adminMfaVerified,true);assert.deepEqual(req.sessionSecurity,security);}
+    else {assert.equal(res.code,401);assert.equal(res.body.code,'SESSION_EXPIRED');}
+  }
+});
 function profileClient(profile,error=null) {
   return {from(table){assert.equal(table,'profiles');return {select(){return this;},eq(field,id){assert.equal(field,'id');assert.equal(id,'current-user');return this;},async single(){return {data:profile,error};},async maybeSingle(){return {data:profile,error};}};}};
 }
@@ -64,14 +77,14 @@ test('admin access trusts the database role rather than supplied metadata or req
     assert.equal(res.code,403);
   }
   for(const role of ['admin','superUser']) {
-    let called=false;const req={userId:'current-user',authAssurance:'aal2',supabase:profileClient({role})};
+    let called=false;const req={userId:'current-user',authAssurance:'aal2',adminMfaVerified:true,supabase:profileClient({role})};
     await authorizeRole(['admin','superUser'])(req,response(),()=>{called=true;});
     assert(called);assert.equal(req.userRole,role);
   }
 });
 
 test('an administrator role without a verified second factor cannot access admin endpoints', async () => {
-  for(const role of ['admin','superUser']) for(const authAssurance of [undefined,'aal1','invalid']) {
+  for(const role of ['admin','superUser']) for(const authAssurance of [undefined,'aal1','aal2','invalid']) {
     const res=response();
     await authorizeRole(['admin','superUser'])({userId:'current-user',authAssurance,supabase:profileClient({role})},res,()=>assert.fail('MFA is mandatory'));
     assert.equal(res.code,403);assert.equal(res.body.code,'ADMIN_MFA_REQUIRED');

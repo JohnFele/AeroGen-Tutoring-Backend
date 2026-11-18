@@ -1,10 +1,10 @@
 begin;
 -- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
-select set_config('request.jwt.claims','{"aal":"aal2"}',true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)))::text,true);
 -- Transaction-only integration checks; all edits/messages are rolled back.
 set local role anon;
 do $$ begin
-  if (select count(*) from public.tutor_directory where demo_dataset='aerogen-live-demo-v1')<>4 then raise exception 'Approved database tutors must be public'; end if;
+  if exists(select 1 from public.tutor_directory where demo_dataset is not null) then raise exception 'Demo tutors must remain hidden'; end if;
   if exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000205') then raise exception 'Pending tutor leaked'; end if;
 end $$;
 reset role;
@@ -23,12 +23,13 @@ do $$ declare stamp timestamptz; begin
   if (select count(*) from public.tutor_profiles where demo_dataset='aerogen-live-demo-v1')<>5 then raise exception 'Admin must see pending tutors'; end if;
   select updated_at into stamp from public.tutor_profiles where user_id='de000000-0000-4000-8000-000000000201';
   perform public.admin_update_tutor('de000000-0000-4000-8000-000000000201','{"public_name":"Demo Maths Tutor — transaction test","is_featured":false}',null,stamp);
-  if not exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000201' and public_name like '%transaction test' and not is_featured) then raise exception 'Saved edits did not reach discovery'; end if;
+  if not exists(select 1 from public.tutor_profiles where user_id='de000000-0000-4000-8000-000000000201' and public_name like '%transaction test' and not is_featured) then raise exception 'Saved edits did not reach the audit profile'; end if;
+  if exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000201') then raise exception 'Editing a demo tutor exposed the account'; end if;
   if not exists(select 1 from public.tutor_profile_audit where tutor_id='de000000-0000-4000-8000-000000000201' and actor_id=(select auth.uid())) then raise exception 'Edit audit missing'; end if;
   begin perform public.admin_update_tutor('de000000-0000-4000-8000-000000000201','{"bio":"stale"}',null,stamp-interval '1 microsecond'); raise exception 'Stale update was accepted'; exception when sqlstate 'PT409' then null; end;
   begin perform public.admin_update_tutor('de000000-0000-4000-8000-000000000201','{}',array[999999999]::bigint[]); raise exception 'Invalid subject accepted'; exception when invalid_parameter_value then null; end;
   perform public.admin_update_tutor('de000000-0000-4000-8000-000000000205','{"is_approved":true,"is_accepting_students":true,"is_featured":true}');
-  if not exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000205' and is_featured) then raise exception 'Approved pending tutor did not publish'; end if;
+  if exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000205') then raise exception 'Approving a demo tutor exposed the account'; end if;
   perform public.admin_update_tutor('de000000-0000-4000-8000-000000000205','{"is_approved":false}');
   if exists(select 1 from public.tutor_directory where id='de000000-0000-4000-8000-000000000205') then raise exception 'Unapproved tutor remained public'; end if;
   if exists(select 1 from public.tutor_profiles where user_id='de000000-0000-4000-8000-000000000205' and is_featured) then raise exception 'Unapproved tutor stayed featured'; end if;

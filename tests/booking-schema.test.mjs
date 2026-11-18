@@ -13,12 +13,12 @@ function response() {
 
 test('missing booking metrics do not take down account and application analytics', async () => {
   const users = [{ id: 'student' }];
-  const applications = [{ id: 'application' }];
+  const applications = [{ id: 'application', user_id: 'student' }];
   const tables = { profiles: users, tutor_profiles: [], tutor_applications: applications };
   const supabase = {
     from(table) {
       assert(Object.hasOwn(tables, table), 'analytics must not read private booking or payment rows as a fallback');
-      return { select() { return this; }, order() { return this; }, range() { return this; },
+      return { select() { return this; }, is(field,value) { assert.equal(field,'demo_dataset');assert.equal(value,null);return this; }, order() { return this; }, range() { return this; },
         abortSignal: async () => ({ data: tables[table] }) };
     },
     rpc(name) {
@@ -32,7 +32,7 @@ test('missing booking metrics do not take down account and application analytics
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, {
     users, tutors: [], applications, bookings: [], bookingActivity: [], payments: [], bookingMetricsAvailable: false,
-    activeAccounts: { live: 1, all: 2 },
+    activeAccounts: { live: 1 },
   });
 });
 

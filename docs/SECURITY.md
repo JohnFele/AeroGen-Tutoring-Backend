@@ -2,14 +2,17 @@
 
 ## Administrator authentication
 
-Admins and superusers must enroll a TOTP authenticator and verify it after sign-in.
+Admins and superusers must enroll a TOTP authenticator. Verification lasts seven
+days within the same signed-in session; reopening the browser does not require
+another code during that window. Signing out or using a new session requires MFA.
 The frontend gate mounts private data providers only after AAL2 verification.
 Settings > Security supports adding another authenticator and removing an old
 one after a replacement is verified. Do not remove the last working authenticator.
 Setup keys live only in the enrollment component's memory, never application storage.
 
 The API checks AAL only after Supabase Auth verifies the exact access token. The
-database's `private.is_platform_admin()` also requires `auth.jwt()->>'aal' = 'aal2'`,
+database's `private.is_platform_admin()` also requires AAL2 and a signed TOTP
+authentication-method timestamp within seven days,
 protecting direct Data API requests and privileged RPCs. Role checks use protected
 profile records, never editable user metadata. Learner-clearance administration
 and admin resource-library access have the same requirement.
@@ -24,6 +27,24 @@ identity, record the recovery decision, revoke existing sessions and remove the
 lost factor using Supabase's administrative controls. The administrator then
 signs in and enrolls a replacement. Never accept a support message alone as proof
 of identity, and never request the person's authenticator secret or password.
+
+## Remembered sessions
+
+Remember me is selected by default and retains credentials for up to 30 days from
+the successful sign-in. Unchecking it uses session storage. Refreshing access
+tokens does not restart this deadline. Google sign-in follows the same preference;
+One Tap away from the login form defaults to a remembered session.
+
+The API's `my_session_security` lookup uses the actual Supabase session ID, owner,
+creation time and any earlier `not_after` limit. Missing, removed, mismatched or
+30-day-old sessions are rejected. The browser receives the authoritative deadline
+and signs out locally on expiry. Access tokens remain short lived and refresh
+normally. The client's persistence selection is not itself an authorization rule.
+Project-wide Supabase Auth refresh lifetime controls remain a separate setting;
+the application API's lifetime guard does not reconfigure the managed Auth service.
+
+Demo records are preserved for historical audit but excluded from public tutor
+discovery, booking student search, saved-tutor responses and normal admin lists.
 
 ## Production HTTP configuration
 

@@ -44,7 +44,9 @@ export function validateTutorEdit(body) {
 async function allRows(client,table,columns,key='id') {
   const rows=[];
   for (let start=0;;start+=500) {
-    const {data,error}=await client.from(table).select(columns).order(key).range(start,start+499).abortSignal(AbortSignal.timeout(15000));
+    let query=client.from(table).select(columns);
+    if(['profiles','tutor_profiles'].includes(table))query=query.is('demo_dataset',null);
+    const {data,error}=await query.order(key).range(start,start+499).abortSignal(AbortSignal.timeout(15000));
     if(error) throw error;
     rows.push(...data);
     if(data.length<500) return rows;
@@ -86,6 +88,8 @@ export const adminData=async(req,res,next)=>{
     if(metrics.error && !isBookingSchemaUnavailable(metrics.error)) throw metrics.error;
     const bookingMetricsAvailable = !metrics.error;
     const bookingMetrics = bookingMetricsAvailable ? metrics.data : { bookings: [], bookingActivity: [], payments: [] };
-    return res.json({users,tutors,...bookingMetrics,applications,bookingMetricsAvailable,activeAccounts:activeAccounts.data ?? null});
+    const liveIds=new Set(users.map(user=>user.id));
+    const liveMetrics=Object.fromEntries(Object.entries(bookingMetrics).map(([key,value])=>[key,Array.isArray(value)?value.filter(row=>!row.demo):value]));
+    return res.json({users,tutors,...liveMetrics,applications:applications.filter(row=>liveIds.has(row.user_id)),bookingMetricsAvailable,activeAccounts:activeAccounts.data ? {live:activeAccounts.data.live} : null});
   } catch(error){return next(error);}
 };

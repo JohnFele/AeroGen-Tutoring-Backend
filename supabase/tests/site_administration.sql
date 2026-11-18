@@ -1,8 +1,8 @@
 begin;
 -- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
-select set_config('request.jwt.claims','{"aal":"aal2"}',true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)))::text,true);
 -- All test data and admin edits roll back; no email is sent by these database checks.
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare v integer; reply jsonb; begin
   if not private.is_platform_admin() then raise exception 'An existing administrator is required for these checks'; end if;
@@ -29,7 +29,7 @@ do $$ declare receipt jsonb; begin
   if (receipt->>'created')::boolean then raise exception 'Duplicate enquiry not idempotent'; end if;
 end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub','de000000-0000-4000-8000-000000000106','role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub','de000000-0000-4000-8000-000000000106','role','authenticated')::text,true);
 set local role authenticated;
 do $$ begin
   if exists(select 1 from public.contact_enquiries where id='de000000-0000-4000-8000-000000000904') then raise exception 'Student can read inbox'; end if;
@@ -38,7 +38,7 @@ do $$ begin
   begin perform public.begin_enquiry_reply('de000000-0000-4000-8000-000000000905','de000000-0000-4000-8000-000000000904','A private admin reply test.',1);raise exception 'Student created reply';exception when insufficient_privilege then null;end;
 end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare response jsonb; begin
   response=public.begin_enquiry_reply('de000000-0000-4000-8000-000000000905','de000000-0000-4000-8000-000000000904','A private admin reply test.',1);

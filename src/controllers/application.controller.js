@@ -100,7 +100,7 @@ export const listApplications = async (req, res, next) => {
       rows.push(...data);
       if (data.length < 100) break;
     }
-    return res.json({ applications: rows });
+    return res.json({ applications: rows.filter(row=>!(Array.isArray(row.profiles)?row.profiles[0]:row.profiles)?.demo_dataset) });
   } catch (error) { if (databaseIssue(res,error)) return; return next(error); }
 };
 export const reviewApplication = async (req, res, next) => {

@@ -17,7 +17,7 @@ export const listStudents = async (req, res, next) => {
   try {
     const students = [];
     for (let start = 0; ; start += 500) {
-      const { data, error } = await req.supabase.from('profiles').select(columns).eq('role', 'student').order('id').range(start, start + 499).abortSignal(AbortSignal.timeout(15000));
+      const { data, error } = await req.supabase.from('profiles').select(columns).eq('role', 'student').is('demo_dataset',null).order('id').range(start, start + 499).abortSignal(AbortSignal.timeout(15000));
       if (error) throw error;
       students.push(...data);
       if (data.length < 500) break;

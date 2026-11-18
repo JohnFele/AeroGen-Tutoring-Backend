@@ -1,7 +1,7 @@
 import{readPlatformSettings}from'../services/platformSettings.js';
 import{createUserSupabaseClient}from'../config/supabase.js';
 async function verifyAdmin(req){
-  try{const[scheme,token,...extra]=(req.headers.authorization||'').split(' ');if(scheme!=='Bearer'||!token||extra.length)return false;const client=createUserSupabaseClient(token);const{data,error}=await client.auth.getUser(token);if(error||!data.user)return false;if(JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString()).aal!=='aal2')return false;const role=await client.from('profiles').select('role').eq('id',data.user.id).single().abortSignal(AbortSignal.timeout(10000));if(role.error||!['admin','superUser'].includes(role.data?.role))return false;req.supabase=client;req.userId=data.user.id;req.userRole=role.data.role;return true}catch{return false}
+  try{const[scheme,token,...extra]=(req.headers.authorization||'').split(' ');if(scheme!=='Bearer'||!token||extra.length)return false;const client=createUserSupabaseClient(token);const{data,error}=await client.auth.getUser(token);if(error||!data.user)return false;const security=await client.rpc('my_session_security').abortSignal(AbortSignal.timeout(10000));if(security.error||!security.data?.valid||!security.data.admin_verified)return false;req.supabase=client;req.userId=data.user.id;req.userRole=security.data.role;return true}catch{return false}
 }
 export function createPlatformGate({load=readPlatformSettings,verifyAdmin:checkAdmin=verifyAdmin}={}){
   return async(req,res,next)=>{

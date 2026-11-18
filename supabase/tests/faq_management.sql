@@ -1,8 +1,8 @@
 begin;
 -- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
-select set_config('request.jwt.claims','{"aal":"aal2"}',true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)))::text,true);
 -- Generated records and all updates are rolled back. Existing FAQs are not edited.
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ begin
   if not private.is_platform_admin() then raise exception 'An existing administrator is required'; end if;
@@ -30,7 +30,7 @@ do $$ begin
   delete from public.site_faqs where id='de000000-0000-4000-8000-000000000912';if found then raise exception 'Student delete allowed'; end if;
 end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ begin
   update public.site_faqs set status='published' where id='de000000-0000-4000-8000-000000000911' and version=1;
@@ -44,7 +44,7 @@ select set_config('request.jwt.claims','{"role":"anon"}',true);
 set local role anon;
 do $$ begin if exists(select 1 from public.site_faqs where id='de000000-0000-4000-8000-000000000911') then raise exception 'Unpublished FAQ still public'; end if;end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch from now())::bigint)),'sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ begin delete from public.site_faqs where id='de000000-0000-4000-8000-000000000911' and version=3;if not found then raise exception 'Admin delete failed'; end if;end; $$;
 rollback;

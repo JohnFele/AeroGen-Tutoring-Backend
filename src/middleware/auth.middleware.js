@@ -1,7 +1,7 @@
 import { createUserSupabaseClient } from '../config/supabase.js';
 import { isApprovedTutor, tutorApprovalRelation } from '../utils/tutorAccess.js';
 
-export const authorize = async (req, res, next) => {
+export const createAuthorize = (getClient = createUserSupabaseClient) => async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Missing authorization header" });
@@ -11,7 +11,7 @@ export const authorize = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid authorization header format' });
     }
 
-    const supabase = createUserSupabaseClient(token);
+    const supabase = getClient(token);
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) return res.status(401).json({ message: 'Invalid or expired access token' });
 
@@ -20,6 +20,11 @@ export const authorize = async (req, res, next) => {
     // getUser above has verified this exact token with Supabase Auth.
     const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
     req.authAssurance = claims.aal === 'aal2' ? 'aal2' : 'aal1';
+    const { data: security, error: securityError } = await supabase.rpc('my_session_security').abortSignal(AbortSignal.timeout(10000));
+    if (securityError) return next(securityError);
+    if (!security?.valid) return res.status(401).json({ code: 'SESSION_EXPIRED', message: 'Your session has expired. Sign in again to continue.' });
+    req.sessionSecurity = security;
+    req.adminMfaVerified = security.admin_verified === true;
 
     next();
   } catch (error) {
@@ -27,6 +32,8 @@ export const authorize = async (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired access token" });
   }
 };
+
+export const authorize = createAuthorize();
 
 export const authorizeRole = (allowedRoles) => async (req, res, next) => {
   try {
@@ -42,7 +49,7 @@ export const authorizeRole = (allowedRoles) => async (req, res, next) => {
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
     }
 
-    if (['admin', 'superUser'].includes(data.role) && req.authAssurance !== 'aal2') {
+    if (['admin', 'superUser'].includes(data.role) && (req.authAssurance !== 'aal2' || !req.adminMfaVerified)) {
       return res.status(403).json({ code: 'ADMIN_MFA_REQUIRED', message: 'Verify your authenticator code to access administrator features.' });
     }
 

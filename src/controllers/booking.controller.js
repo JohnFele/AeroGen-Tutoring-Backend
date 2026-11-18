@@ -60,7 +60,7 @@ export function bookableStudents(req, res, next) {
 }
 export function myTutors(req,res,next){
  res.set('Cache-Control','no-store');
- return rpc(req.supabase,'my_student_tutors',{},res,next,tutors=>({tutors}));
+ return rpc(req.supabase,'my_student_tutors',{},res,next,tutors=>({tutors:tutors.filter(tutor=>!tutor.demo_dataset)}));
 }
 
 export function bookingHours(req, res, next) {
