@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import routes from './routes/router.js';
 // import { ENV } from './config/env.config.js';
-import { applicationLimiter, generalLimiter, profileReadLimiter } from './middleware/rateLimit.middleware.js';
+import { applicationLimiter, generalLimiter, messagingIpLimiter, profileReadLimiter } from './middleware/rateLimit.middleware.js';
 import { corsOptions } from './config/cors.config.js';
 import { authorize } from './middleware/auth.middleware.js';
 import {platformGate as defaultPlatformGate,requireApplicationsOpen} from './middleware/platform.middleware.js';
@@ -19,6 +19,7 @@ app.post(['/api/v1/site/bug-reports', '/api/v1/workspace/bug-reports'], express.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(profileReadLimiter);
+app.use(messagingIpLimiter);
 app.use(generalLimiter);
 
 app.use('/api/v1',platformGate);

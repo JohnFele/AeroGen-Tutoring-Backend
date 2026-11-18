@@ -4,6 +4,7 @@ import {createPublicSupabaseClient} from '../config/supabase.js';
 import {deliverSupportEmail} from './support.controller.js';
 import {applySupportSearch,parseSupportSearch} from '../utils/supportSearch.js';
 import {screenshotArgs,triageArgs} from '../utils/bugReports.js';
+import {parseQueuePage} from '../utils/queuePagination.js';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -99,8 +100,9 @@ export const deleteOpening=async(req,res,next)=>{
   try{const{data,error}=await req.supabase.from('career_openings').delete().eq('id',req.params.id).eq('version',version).select('id').maybeSingle().abortSignal(timeout());if(error)throw error;if(!data)return res.status(409).json({message:'This opening changed. Reload before deleting.'});return res.json({deleted:true})}catch(error){if(!siteError(res,error))next(error)}
 };
 export const listEnquiries=async(req,res,next)=>{try{
-  const page=Number(req.query.page??1),limit=25;
-  if(!Number.isSafeInteger(page)||page<1||page>1000)return res.status(400).json({message:'Choose a valid page.'});
+  const paging=parseQueuePage(req.query);
+  if(!paging)return res.status(400).json({message:'Choose a valid page and page size.'});
+  const{page,limit}=paging;
   const search=parseSupportSearch(req.query,'enquiries');
   if(!search)return res.status(400).json({message:'Enter a valid enquiry reference, prefix, or UTC date.'});
   const developer=req.query.queue==='developer';

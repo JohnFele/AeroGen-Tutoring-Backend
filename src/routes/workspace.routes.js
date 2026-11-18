@@ -1,14 +1,16 @@
+import {conversations,conversation,messageHistory,sendMessage,blockConversation,reportMessage,notificationSummary} from '../controllers/messaging.controller.js';
 import { Router } from 'express';
 import { authorize, requireTutorApproval } from '../middleware/auth.middleware.js';
 import {listNotifications,markNotificationRead,deleteNotification,deleteNotifications,readConversation} from '../controllers/notification.controller.js';
 import { bookableStudents, bookingDay, bookingHours, bookingMonth, matchingSlots, myTutors, recurringBookingOptions, reportBooking, requestBooking, respondToBooking, saveBookingDay, saveBookingHours, tutorsAtTime } from '../controllers/booking.controller.js';
-import { billingLimiter, bookingRequestLimiter, supportLimiter } from '../middleware/rateLimit.middleware.js';
+import { billingLimiter, bookingRequestLimiter, courseAnswerLimiter, messagingAccountLimiter, supportLimiter } from '../middleware/rateLimit.middleware.js';
 import { billingOverview, changePlan, checkoutLesson, confirmPlan, earningsStatement, lessonOutcome, lessonRating, myTicket, myTickets, newMemberBugReport, newTicket, rateTicketReply, renewalSimulation, replyTicket, resolveTicket, subscriptionReceipt, tutorPayout } from '../controllers/billingSupport.controller.js';
 import { downloadBugScreenshot } from '../utils/bugReports.js';
 import { learningAction, learningHistory, learningProgress, markLearningTutorialSeen } from '../controllers/learning.controller.js';
 import { tutorLibrary,saveLibraryBookmark,answerLibraryLesson,importLibraryProgress } from '../controllers/resources.controller.js';
 const router=Router();
 router.use(authorize);
+router.use(messagingAccountLimiter);
 router.get('/tickets',myTickets);
 router.post('/tickets',supportLimiter,newTicket);
 router.post('/bug-reports',supportLimiter,newMemberBugReport);
@@ -22,7 +24,7 @@ router.use(requireTutorApproval);
 router.get('/resources',tutorLibrary);
 router.post('/resources/import',importLibraryProgress);
 router.post('/resources/:id/save',saveLibraryBookmark);
-router.post('/resources/:id/lessons/:lesson/answer',supportLimiter,answerLibraryLesson);
+router.post('/resources/:id/lessons/:lesson/answer',courseAnswerLimiter,answerLibraryLesson);
 router.get('/learning',learningProgress);
 router.get('/learning/plans/:plan',learningProgress);
 router.get('/learning/plans/:plan/history',learningHistory);
@@ -50,14 +52,16 @@ router.get('/my-tutors',myTutors);
 router.post('/bookings',bookingRequestLimiter,requestBooking);
 router.patch('/bookings/:id',respondToBooking);
 router.post('/bookings/:id/report',supportLimiter,reportBooking);
-const idPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 router.get('/',async(req,res,next)=>{
-  try{const {data,error}=await req.supabase.rpc('my_tutoring_workspace');if(error)throw error;res.set('Cache-Control','no-store');return res.json(data);}catch(error){return next(error);}
+  try{const {data,error}=await req.supabase.rpc('my_tutoring_workspace',{_conversation_previews:true});if(error)throw error;res.set('Cache-Control','no-store');return res.json(data);}catch(error){return next(error);}
 });
-router.post('/conversations/:id/messages',async(req,res,next)=>{
-  if(!idPattern.test(req.params.id)||typeof req.body?.body!=='string'||!req.body.body.trim()||req.body.body.length>10000)return res.status(400).json({message:'Choose a conversation and enter a message of 1 to 10,000 characters.'});
-  try{const {data,error}=await req.supabase.rpc('send_tutoring_message',{_conversation_id:req.params.id,_body:req.body.body});if(error?.code==='42501')return res.status(403).json({message:'You cannot access this conversation.'});if(error)throw error;return res.status(201).json({id:data});}catch(error){return next(error);}
-});
+router.get('/conversations',conversations);
+router.get('/notification-summary',notificationSummary);
+router.get('/conversations/:id',conversation);
+router.get('/conversations/:id/messages',messageHistory);
+router.post('/conversations/:id/messages',sendMessage);
+router.patch('/conversations/:id/block',blockConversation);
+router.post('/messages/:id/report',supportLimiter,reportMessage);
 router.patch('/conversations/:id/read',readConversation);
 router.get('/notifications',listNotifications);
 router.patch('/notifications/read',markNotificationRead);

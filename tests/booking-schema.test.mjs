@@ -64,7 +64,7 @@ test('All safety cases use the same pagination and ordering as individual status
   const res = response();
   await listSafetyCases({ supabase, query: { status: 'all', page: '2' } }, res, assert.ifError);
   assert.deepEqual(calls, [['order', 'created_at'], ['order', 'id'], ['range', 25, 49]]);
-  assert.deepEqual(res.body, { cases: rows, total: 28 });
+  assert.deepEqual(res.body, { cases: rows, total: 28, page:2, limit:25 });
 
   calls.length = 0;
   await listSafetyCases({ supabase, query: {} }, response(), assert.ifError);

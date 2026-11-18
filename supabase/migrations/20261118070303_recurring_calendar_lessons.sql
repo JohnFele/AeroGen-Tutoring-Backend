@@ -59,7 +59,7 @@ returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare actor uuid := (select auth.uid()); result jsonb;
 begin
   perform private.assert_platform_available();
-  if actor is null or actor not in (_tutor,_student) or not private.booking_pair_allowed(_tutor,_student) then
+  if actor is null or _tutor is null or _student is null or actor not in (_tutor,_student) or not private.booking_pair_allowed(_tutor,_student) then
     raise exception 'Choose a valid tutor and student.' using errcode='42501';
   end if;
   select jsonb_agg(jsonb_build_object('starts_at',r.starts_at,'available',
@@ -78,7 +78,7 @@ declare
   occurrence record; booking_id uuid; ids uuid[] := '{}'; recipient uuid; counterpart text; names record; previous_mode text;
 begin
   perform private.assert_platform_available();
-  if actor is null or actor not in (_tutor,_student) or _request is null then
+  if actor is null or _tutor is null or _student is null or actor not in (_tutor,_student) or _request is null then
     raise exception 'Only a participant can request recurring lessons.' using errcode='42501';
   end if;
   payload:=jsonb_build_object('tutor',_tutor,'student',_student,'subject',_subject,'starts',_starts_at,'duration',_duration,

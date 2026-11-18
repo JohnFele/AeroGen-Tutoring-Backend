@@ -1,6 +1,7 @@
 import { createPublicSupabaseClient } from '../config/supabase.js';
 import { isBookingSchemaUnavailable } from '../utils/bookingSchema.js';
 import { applySupportSearch, parseSupportSearch } from '../utils/supportSearch.js';
+import { parseQueuePage } from '../utils/queuePagination.js';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const durations = [30, 60, 90, 120];
@@ -151,8 +152,8 @@ export async function listSafetyCases(req, res, next) {
   const developer = req.query.queue === 'developer';
   if (developer && req.userRole !== 'superUser') return res.status(403).json({ message: 'Only superusers can access the developer queue.' });
   if (!['all', 'new', 'investigating', 'waiting', 'resolved'].includes(status)) return bad(res, 'Choose a case status.');
-  const page = Number(req.query.page || 1);
-  if (!Number.isSafeInteger(page) || page < 1 || page > 1000) return bad(res, 'Choose a valid page.');
+  const paging = parseQueuePage(req.query);
+  if (!paging) return bad(res, 'Choose a valid page and page size.');
   const search = parseSupportSearch(req.query, 'tickets');
   if (!search) return bad(res, 'Enter a valid ticket reference, prefix, or UTC date.');
   const { reporter, category, issue } = req.query;
@@ -171,9 +172,9 @@ export async function listSafetyCases(req, res, next) {
     query = applySupportSearch(query, search);
     if (!developer && req.query.order === 'due') query = query.order('response_due_at', { nullsFirst: false });
     const { data, count, error } = await query.order('created_at', { ascending: false }).order('id')
-      .range((page - 1) * 25, page * 25 - 1).abortSignal(AbortSignal.timeout(15000));
+      .range(paging.from, paging.to).abortSignal(AbortSignal.timeout(15000));
     if (error) return fail(error, res, next);
-    return res.json({ cases: data, total: count });
+    return res.json({ cases: data, total: count, page:paging.page, limit:paging.limit });
   } catch (error) { return next(error); }
 }
 
