@@ -1,6 +1,8 @@
 -- Run this entire file only after application_review.sql has been applied.
 -- All application, object-metadata, role and profile changes roll back.
 begin;
+-- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
+select set_config('request.jwt.claims','{"aal":"aal2"}',true);
 insert into storage.objects(bucket_id,name,metadata) values
  ('tutor-application-documents','de000000-0000-4000-8000-000000000106/cf000000-0000-4000-8000-000000000001/identity.pdf','{"mimetype":"application/pdf","size":100}'),
  ('tutor-application-documents','de000000-0000-4000-8000-000000000106/cf000000-0000-4000-8000-000000000001/qualification.pdf','{"mimetype":"application/pdf","size":100}');

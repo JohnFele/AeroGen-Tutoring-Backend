@@ -17,6 +17,9 @@ export const authorize = async (req, res, next) => {
 
     req.supabase = supabase;
     req.userId = data.user.id;
+    // getUser above has verified this exact token with Supabase Auth.
+    const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    req.authAssurance = claims.aal === 'aal2' ? 'aal2' : 'aal1';
 
     next();
   } catch (error) {
@@ -37,6 +40,10 @@ export const authorizeRole = (allowedRoles) => async (req, res, next) => {
     const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
     if (!allowed.includes(data.role)) {
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
+    }
+
+    if (['admin', 'superUser'].includes(data.role) && req.authAssurance !== 'aal2') {
+      return res.status(403).json({ code: 'ADMIN_MFA_REQUIRED', message: 'Verify your authenticator code to access administrator features.' });
     }
 
     req.userRole = data.role;

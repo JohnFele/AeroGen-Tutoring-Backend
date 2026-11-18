@@ -1,6 +1,8 @@
 begin;
+-- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
+select set_config('request.jwt.claims','{"aal":"aal2"}',true);
 -- All flag changes, audit records and generated records roll back. No emails are sent.
-select set_config('request.jwt.claims',jsonb_build_object('sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare v integer; snapshot jsonb; begin
   select version into v from public.platform_settings where id;
@@ -22,7 +24,7 @@ do $$ begin
   if exists(select 1 from public.platform_settings_audit) then raise exception 'Student can read admin audit'; end if;
 end; $$;
 reset role;
-select set_config('request.jwt.claims',jsonb_build_object('sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
+select set_config('request.jwt.claims',jsonb_build_object('aal','aal2','sub',(select id from public.profiles where role in ('admin','superUser') order by id limit 1),'role','authenticated')::text,true);
 set local role authenticated;
 do $$ declare v integer; begin
   select version into v from public.platform_settings where id;

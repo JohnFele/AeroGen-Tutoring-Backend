@@ -1,4 +1,6 @@
 begin;
+-- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
+select set_config('request.jwt.claims','{"aal":"aal2"}',true);
 
 insert into auth.users(id,email,raw_user_meta_data,raw_app_meta_data) values
   ('c1800000-0000-4000-8000-000000000001','delivery.student@example.test','{}','{}'),
@@ -126,4 +128,3 @@ end;
 $$;
 
 rollback;
-

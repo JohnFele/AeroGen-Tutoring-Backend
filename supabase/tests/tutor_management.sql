@@ -1,3 +1,6 @@
+begin;
+-- Successful staff workflows model a verified MFA session; denial cases are in staff_mfa.sql.
+select set_config('request.jwt.claims','{"aal":"aal2"}',true);
 -- Transaction-only integration checks; all edits/messages are rolled back.
 set local role anon;
 do $$ begin
@@ -40,3 +43,5 @@ do $$ declare own_conversation uuid; begin
   begin perform public.send_tutoring_message('00000000-0000-4000-8000-000000000099','Forbidden'); raise exception 'Unrelated conversation was writable'; exception when insufficient_privilege then null; end;
 end $$;
 reset role;
+
+rollback;
