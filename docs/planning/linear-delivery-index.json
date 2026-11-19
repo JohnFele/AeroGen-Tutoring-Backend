@@ -1,0 +1,561 @@
+{
+  "project": "P-ONE-5",
+  "projectUrl": "https://linear.app/leantechlab/project/aerogen-tutoring-memberships-learning-and-tutor-trust-942fb6f0bb80",
+  "specificationUrl": "https://linear.app/leantechlab/document/aerogen-membership-featured-and-learning-delivery-specification-b105b7d10644",
+  "team": "ONE",
+  "calendarDates": "unset by owner request",
+  "status": "planning; application implementation pending approval",
+  "issues": [
+    {
+      "key": "D0",
+      "id": "ONE-86",
+      "title": "Approve membership pricing, commissions and payment launch scope",
+      "url": "https://linear.app/leantechlab/issue/ONE-86/approve-membership-pricing-commissions-and-payment-launch-scope",
+      "milestone": "0. Decision and access readiness",
+      "effort": "0.5–1 day",
+      "optional": false,
+      "dependsOn": []
+    },
+    {
+      "key": "D1",
+      "id": "ONE-87",
+      "title": "Approve learning readiness, personal-plan permissions and quota lifecycle",
+      "url": "https://linear.app/leantechlab/issue/ONE-87/approve-learning-readiness-personal-plan-permissions-and-quota",
+      "milestone": "0. Decision and access readiness",
+      "effort": "0.5–1 day",
+      "optional": false,
+      "dependsOn": []
+    },
+    {
+      "key": "D2",
+      "id": "ONE-88",
+      "title": "Approve Featured selection rubric, expiry, fairness and public meaning",
+      "url": "https://linear.app/leantechlab/issue/ONE-88/approve-featured-selection-rubric-expiry-fairness-and-public-meaning",
+      "milestone": "0. Decision and access readiness",
+      "effort": "0.5–1 day",
+      "optional": false,
+      "dependsOn": []
+    },
+    {
+      "key": "C0",
+      "id": "ONE-89",
+      "title": "Publish one versioned membership and benefit catalogue",
+      "url": "https://linear.app/leantechlab/issue/ONE-89/publish-one-versioned-membership-and-benefit-catalogue",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "C1",
+      "id": "ONE-90",
+      "title": "Enforce owner-scoped feature entitlements in API and Supabase",
+      "url": "https://linear.app/leantechlab/issue/ONE-90/enforce-owner-scoped-feature-entitlements-in-api-and-supabase",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-89",
+        "ONE-87",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "C2",
+      "id": "ONE-91",
+      "title": "Make learner quota activation and downgrade archiving atomic",
+      "url": "https://linear.app/leantechlab/issue/ONE-91/make-learner-quota-activation-and-downgrade-archiving-atomic",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-87",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "C3",
+      "id": "ONE-92",
+      "title": "Deliver a 30-day software-only Premium trial with exact expiry",
+      "url": "https://linear.app/leantechlab/issue/ONE-92/deliver-a-30-day-software-only-premium-trial-with-exact-expiry",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-91",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "C4",
+      "id": "ONE-93",
+      "title": "Implement verified upgrade, renewal, downgrade and cancellation transitions",
+      "url": "https://linear.app/leantechlab/issue/ONE-93/implement-verified-upgrade-renewal-downgrade-and-cancellation",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-91",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "C5",
+      "id": "ONE-94",
+      "title": "Separate sandbox payment simulation from verified production payments",
+      "url": "https://linear.app/leantechlab/issue/ONE-94/separate-sandbox-payment-simulation-from-verified-production-payments",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "2–4 days plus provider lead time",
+      "optional": false,
+      "dependsOn": [
+        "ONE-86",
+        "ONE-89"
+      ]
+    },
+    {
+      "key": "C6",
+      "id": "ONE-95",
+      "title": "Decouple lesson quotes, reservations and reversals from feature membership",
+      "url": "https://linear.app/leantechlab/issue/ONE-95/decouple-lesson-quotes-reservations-and-reversals-from-feature",
+      "milestone": "1. Membership and financial foundation",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-93",
+        "ONE-94",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L0",
+      "id": "ONE-96",
+      "title": "Provide resumable guardian authorisation without a full parent dashboard",
+      "url": "https://linear.app/leantechlab/issue/ONE-96/provide-resumable-guardian-authorisation-without-a-full-parent",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "2–4 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-87",
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L1",
+      "id": "ONE-97",
+      "title": "Let eligible learners start private personal plans before booking tuition",
+      "url": "https://linear.app/leantechlab/issue/ONE-97/let-eligible-learners-start-private-personal-plans-before-booking",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-91",
+        "ONE-96",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L2",
+      "id": "ONE-98",
+      "title": "Organise My Learning around Today, plans and progressive detail",
+      "url": "https://linear.app/leantechlab/issue/ONE-98/organise-my-learning-around-today-plans-and-progressive-detail",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-97",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L3",
+      "id": "ONE-99",
+      "title": "Link personal plans to approved tutors with scoped learner consent",
+      "url": "https://linear.app/leantechlab/issue/ONE-99/link-personal-plans-to-approved-tutors-with-scoped-learner-consent",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-97",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L4",
+      "id": "ONE-100",
+      "title": "Unify progress calculations and separate score, skill and habit evidence",
+      "url": "https://linear.app/leantechlab/issue/ONE-100/unify-progress-calculations-and-separate-score-skill-and-habit",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-97",
+        "ONE-99",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L5",
+      "id": "ONE-101",
+      "title": "Connect dashboard learning summaries to the canonical plan data",
+      "url": "https://linear.app/leantechlab/issue/ONE-101/connect-dashboard-learning-summaries-to-the-canonical-plan-data",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-100",
+        "ONE-98",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "L6",
+      "id": "ONE-102",
+      "title": "Make learning tutorials tier-aware, action-based and resumable across devices",
+      "url": "https://linear.app/leantechlab/issue/ONE-102/make-learning-tutorials-tier-aware-action-based-and-resumable-across",
+      "milestone": "2. My Learning core and trustworthy progress",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-98",
+        "ONE-99",
+        "ONE-100",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P0",
+      "id": "ONE-103",
+      "title": "Add a Pro personal study checklist linked to existing goals",
+      "url": "https://linear.app/leantechlab/issue/ONE-103/add-a-pro-personal-study-checklist-linked-to-existing-goals",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-98",
+        "ONE-100",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P1",
+      "id": "ONE-104",
+      "title": "Add a Premium exam and topic planner with controlled reminders",
+      "url": "https://linear.app/leantechlab/issue/ONE-104/add-a-premium-exam-and-topic-planner-with-controlled-reminders",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-103",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P2",
+      "id": "ONE-105",
+      "title": "Provide tutor templates with Pro and Premium storage limits",
+      "url": "https://linear.app/leantechlab/issue/ONE-105/provide-tutor-templates-with-pro-and-premium-storage-limits",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-91",
+        "ONE-100",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P3",
+      "id": "ONE-106",
+      "title": "Allow Premium bulk preparation as reviewable learner-specific proposals",
+      "url": "https://linear.app/leantechlab/issue/ONE-106/allow-premium-bulk-preparation-as-reviewable-learner-specific",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-105",
+        "ONE-99",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P4",
+      "id": "ONE-107",
+      "title": "Enforce minimum-tier access for resource bodies, courses and downloads",
+      "url": "https://linear.app/leantechlab/issue/ONE-107/enforce-minimum-tier-access-for-resource-bodies-courses-and-downloads",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P5",
+      "id": "ONE-108",
+      "title": "Let admins curate resource tiers and keep goal guidance connected",
+      "url": "https://linear.app/leantechlab/issue/ONE-108/let-admins-curate-resource-tiers-and-keep-goal-guidance-connected",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-107",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P6",
+      "id": "ONE-109",
+      "title": "Generate genuine period-specific learning and performance PDFs",
+      "url": "https://linear.app/leantechlab/issue/ONE-109/generate-genuine-period-specific-learning-and-performance-pdfs",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-100",
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P7",
+      "id": "ONE-110",
+      "title": "Schedule Premium summaries and deliver private report links safely",
+      "url": "https://linear.app/leantechlab/issue/ONE-110/schedule-premium-summaries-and-deliver-private-report-links-safely",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-109",
+        "ONE-104",
+        "ONE-92",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "P8",
+      "id": "ONE-111",
+      "title": "Deliver Pro subject analysis and Premium contextual comparisons",
+      "url": "https://linear.app/leantechlab/issue/ONE-111/deliver-pro-subject-analysis-and-premium-contextual-comparisons",
+      "milestone": "3. Paid planning, resources and reports",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-100",
+        "ONE-101",
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "B0",
+      "id": "ONE-112",
+      "title": "Implement audited Featured selection eligibility, duration and expiry",
+      "url": "https://linear.app/leantechlab/issue/ONE-112/implement-audited-featured-selection-eligibility-duration-and-expiry",
+      "milestone": "4. Featured tutor selection and discovery",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-88",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "B1",
+      "id": "ONE-113",
+      "title": "Replace the Featured toggle with an admin editorial review workflow",
+      "url": "https://linear.app/leantechlab/issue/ONE-113/replace-the-featured-toggle-with-an-admin-editorial-review-workflow",
+      "milestone": "4. Featured tutor selection and discovery",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-112",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "B2",
+      "id": "ONE-114",
+      "title": "Let tutors request Featured consideration and see eligibility feedback",
+      "url": "https://linear.app/leantechlab/issue/ONE-114/let-tutors-request-featured-consideration-and-see-eligibility-feedback",
+      "milestone": "4. Featured tutor selection and discovery",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-112",
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "B3",
+      "id": "ONE-115",
+      "title": "Apply active Featured selections consistently to nearby discovery and badges",
+      "url": "https://linear.app/leantechlab/issue/ONE-115/apply-active-featured-selections-consistently-to-nearby-discovery-and",
+      "milestone": "4. Featured tutor selection and discovery",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-112",
+        "ONE-113",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "U0",
+      "id": "ONE-116",
+      "title": "Show consistent plan, trial, quota and downgrade state across dashboards",
+      "url": "https://linear.app/leantechlab/issue/ONE-116/show-consistent-plan-trial-quota-and-downgrade-state-across-dashboards",
+      "milestone": "5. App-wide plan experience and commercial clarity",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-92",
+        "ONE-93",
+        "ONE-98",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "U1",
+      "id": "ONE-117",
+      "title": "Gate recurrence by initiator plan while preserving accepted bookings",
+      "url": "https://linear.app/leantechlab/issue/ONE-117/gate-recurrence-by-initiator-plan-while-preserving-accepted-bookings",
+      "milestone": "5. App-wide plan experience and commercial clarity",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-95",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "U2",
+      "id": "ONE-118",
+      "title": "Make public pricing, dashboard pricing and checkout explain the same product",
+      "url": "https://linear.app/leantechlab/issue/ONE-118/make-public-pricing-dashboard-pricing-and-checkout-explain-the-same",
+      "milestone": "5. App-wide plan experience and commercial clarity",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-89",
+        "ONE-93",
+        "ONE-116",
+        "ONE-109",
+        "ONE-111",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "U3",
+      "id": "ONE-119",
+      "title": "Show real commission economics without paywalling income records",
+      "url": "https://linear.app/leantechlab/issue/ONE-119/show-real-commission-economics-without-paywalling-income-records",
+      "milestone": "5. App-wide plan experience and commercial clarity",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-95",
+        "ONE-90",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "O0",
+      "id": "ONE-120",
+      "title": "Optional: sell tutor-specific four/eight lesson packs after funding approval",
+      "url": "https://linear.app/leantechlab/issue/ONE-120/optional-sell-tutor-specific-foureight-lesson-packs-after-funding",
+      "milestone": "5. App-wide plan experience and commercial clarity",
+      "effort": "2–4 days",
+      "optional": true,
+      "dependsOn": [
+        "ONE-86",
+        "ONE-95"
+      ]
+    },
+    {
+      "key": "R0",
+      "id": "ONE-121",
+      "title": "Migrate legacy contracts, credits and Featured flags without inventing value",
+      "url": "https://linear.app/leantechlab/issue/ONE-121/migrate-legacy-contracts-credits-and-featured-flags-without-inventing",
+      "milestone": "6. Migration, validation and release readiness",
+      "effort": "1.5–2.5 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-95",
+        "ONE-112",
+        "ONE-91",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "R1",
+      "id": "ONE-122",
+      "title": "Verify the full plan, consent, payment and direct-RPC access matrix",
+      "url": "https://linear.app/leantechlab/issue/ONE-122/verify-the-full-plan-consent-payment-and-direct-rpc-access-matrix",
+      "milestone": "6. Migration, validation and release readiness",
+      "effort": "2–3 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-92",
+        "ONE-93",
+        "ONE-94",
+        "ONE-99",
+        "ONE-100",
+        "ONE-106",
+        "ONE-107",
+        "ONE-109",
+        "ONE-110",
+        "ONE-111",
+        "ONE-115",
+        "ONE-117",
+        "ONE-121",
+        "ONE-114",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "R2",
+      "id": "ONE-123",
+      "title": "Instrument expiry, report jobs and discovery performance without leaking learner data",
+      "url": "https://linear.app/leantechlab/issue/ONE-123/instrument-expiry-report-jobs-and-discovery-performance-without",
+      "milestone": "6. Migration, validation and release readiness",
+      "effort": "1–2 days",
+      "optional": false,
+      "dependsOn": [
+        "ONE-90",
+        "ONE-110",
+        "ONE-112",
+        "ONE-86"
+      ]
+    },
+    {
+      "key": "R3",
+      "id": "ONE-124",
+      "title": "Run usability pilots and owner-controlled staged release with rollback",
+      "url": "https://linear.app/leantechlab/issue/ONE-124/run-usability-pilots-and-owner-controlled-staged-release-with-rollback",
+      "milestone": "6. Migration, validation and release readiness",
+      "effort": "2–3 days plus participant availability",
+      "optional": false,
+      "dependsOn": [
+        "ONE-102",
+        "ONE-104",
+        "ONE-108",
+        "ONE-116",
+        "ONE-118",
+        "ONE-119",
+        "ONE-122",
+        "ONE-123",
+        "ONE-86"
+      ]
+    }
+  ]
+}
