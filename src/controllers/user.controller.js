@@ -6,7 +6,7 @@ export const me = async (req, res, next) => {
 
     const { data: profile, error } = await req.supabase
       .from('profiles')
-      .select(profileSelect)
+      .select(`${profileSelect},identity_correction_required`)
       .eq('id', req.userId)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found' });
@@ -54,6 +54,7 @@ const serializeProfile = (profile) => ({
   studyProgramme: profile.study_programme,
   studyGoals: profile.study_goals,
   isVerified: profile.is_verified,
+  identityCorrectionRequired: Boolean(profile.identity_correction_required),
   profileSetupPending: profile.profile_setup_pending,
   isDemo: Boolean(profile.demo_dataset),
   demoDataset: profile.demo_dataset,
@@ -124,7 +125,7 @@ export const updateMe = async (req, res, next) => {
       .from('profiles')
       .update(updates)
       .eq('id', req.userId)
-      .select(profileSelect)
+      .select(`${profileSelect},identity_correction_required`)
       .single();
     if (error?.code === 'PGRST116') return res.status(404).json({ message: 'User profile not found.' });
     if (error?.code === '22023') return res.status(400).json({ message: error.message });

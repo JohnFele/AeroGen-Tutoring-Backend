@@ -63,9 +63,10 @@ export const authorizeRole = (allowedRoles) => async (req, res, next) => {
 export const requireTutorApproval = async (req, res, next) => {
   try {
     const { data, error } = await req.supabase.from('profiles')
-      .select(`role,${tutorApprovalRelation}`).eq('id', req.userId).maybeSingle();
+      .select(`role,identity_correction_required,${tutorApprovalRelation}`).eq('id', req.userId).maybeSingle();
     if (error) return next(error);
     if (!data) return res.status(403).json({ message: 'User profile not found.' });
+    if(data.identity_correction_required)return res.status(403).json({code:'TUTOR_IDENTITY_CORRECTION_REQUIRED',message:'Correct your tutor identity information before accessing your dashboard.'});
     if (data.role === 'tutor' && !isApprovedTutor(data)) {
       return res.status(403).json({
         code: 'TUTOR_APPROVAL_REQUIRED',

@@ -4,7 +4,7 @@ import { publicApplicationRevision, readPreviousDocument, readRejectedApplicatio
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const arrays=['subjects','studentAgeGroups','availability','teachingMode'];
-const limits={firstName:60,lastName:60,email:254,phone:22,idNumber:100,address:1000,city:160,province:40,highestQualification:250,institution:250,yearCompleted:4,certifications:1000,yearsExperience:10,previousPlatforms:1000,teachingStyle:1000,hourlyRate:10,studentsPerSession:20};
+const limits={firstName:60,lastName:60,email:254,phone:22,idNumber:100,address:1000,city:160,province:40,highestQualification:250,institution:250,yearCompleted:4,certifications:1000,yearsExperience:10,previousPlatforms:1000,teachingStyle:1000,hourlyRate:10,onlineHourlyRate:10,inPersonHourlyRate:10,studentsPerSession:20};
 export function validateDraft(body) {
   if(!body||!uuid.test(body.id)||!uuid.test(body.saveId)||!Number.isInteger(body.step)||body.step<1||body.step>5||!Number.isInteger(body.furthestStep)||body.furthestStep<body.step||body.furthestStep>5
     ||(body.expectedVersion!==null&&(!Number.isSafeInteger(body.expectedVersion)||body.expectedVersion<1)))throw new Error('Reload the application before saving this draft.');

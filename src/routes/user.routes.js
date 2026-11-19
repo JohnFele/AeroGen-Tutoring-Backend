@@ -15,10 +15,12 @@ import { supportLimiter } from "../middleware/rateLimit.middleware.js";
 import { learnerAgeProfile } from "../controllers/learning.controller.js";
 
 const router = express.Router();
+import { logoutSummary } from '../controllers/staffActions.controller.js';
 
 router.use(authorize);
 
 router.get("/me", me);
+router.get('/me/logout-summary',logoutSummary);
 router.patch("/me", updateMe);
 router.get("/me/learner-age", learnerAgeProfile);
 router.patch("/me/learner-age", learnerAgeProfile);

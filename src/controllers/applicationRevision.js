@@ -9,7 +9,7 @@ export const applicationFields = {
 };
 
 const revisionColumns = [
-  'id', 'status', ...Object.values(applicationFields), 'year_completed', 'experience_range', 'years_experience', 'hourly_rate',
+  'id', 'status', ...Object.values(applicationFields), 'year_completed', 'experience_range', 'years_experience', 'hourly_rate','online_hourly_rate','in_person_hourly_rate','profiles!tutor_applications_user_id_fkey(identity_correction_required)',
   'tutor_application_subjects(subjects(name))',
   'tutor_application_documents(id,document_type,storage_path,original_filename,size_bytes)',
 ].join(',');
@@ -20,7 +20,7 @@ export async function readRejectedApplication(req) {
     .order('created_at', { ascending: false }).order('id', { ascending: false })
     .limit(1).maybeSingle().abortSignal(AbortSignal.timeout(15000));
   if (error) throw error;
-  return data?.status === 'rejected' ? data : null;
+  return data?.status === 'rejected' || data?.profiles?.identity_correction_required ? data : null;
 }
 
 export function publicApplicationRevision(row) {
@@ -33,6 +33,8 @@ export function publicApplicationRevision(row) {
       yearCompleted: String(row.year_completed ?? ''),
       yearsExperience: row.experience_range || String(row.years_experience ?? ''),
       hourlyRate: String(row.hourly_rate ?? ''),
+      onlineHourlyRate: String(row.online_hourly_rate ?? row.hourly_rate ?? ''),
+      inPersonHourlyRate: String(row.in_person_hourly_rate ?? row.hourly_rate ?? ''),
       subjects: (row.tutor_application_subjects || []).map(item => item.subjects?.name).filter(Boolean),
     },
     documents: Object.entries(applicationDocumentTypes).flatMap(([kind, type]) => {

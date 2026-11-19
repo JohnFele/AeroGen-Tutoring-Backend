@@ -29,7 +29,7 @@ function client({ reads = [{data:null},{data:[]},{data:[{id:1,name:'Mathematics'
   const supabase = {
     from(table) {
       calls.push(['read',table])
-      const builder = { select(columns) { calls.push(['select',columns]); return this }, eq() { return this }, in() { return this }, limit() { return this }, maybeSingle() { return Promise.resolve(next()) }, then(resolve,reject) { return Promise.resolve(next()).then(resolve,reject) } }
+      const builder = { select(columns) { calls.push(['select',columns]); return this }, eq() { return this }, in() { return this }, limit() { return this }, single() { return Promise.resolve(next()) }, maybeSingle() { return Promise.resolve(next()) }, then(resolve,reject) { return Promise.resolve(next()).then(resolve,reject) } }
       return builder
     },
     storage: { from() { return { async upload(path, bytes, options) { calls.push(['upload',path,bytes.length,options]); return {error:uploadError} }, async remove(paths) { calls.push(['remove',paths]); return {} } } } },
@@ -61,7 +61,7 @@ test('retrying a committed submission returns the saved ID without uploading aga
  assert.equal(res.code,200);assert(!calls.some(call=>['rpc','upload'].includes(call[0])))
 })
 test('a duplicate open application or unknown subject never uploads files',async()=>{
- for(const reads of [[{data:null},{data:[{id}]}],[{data:null},{data:[]},{data:[]}]]){
+ for(const reads of [[{data:null},{data:[{id}]},{data:{identity_correction_required:false}}],[{data:null},{data:[]},{data:[]}]]){
  const {supabase,calls}=client({reads});const res=response();await submitApplication(request(supabase),res,fail)
  assert([400,409].includes(res.code));assert(!calls.some(call=>call[0]==='upload'))
  }

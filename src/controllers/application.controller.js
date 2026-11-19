@@ -20,9 +20,12 @@ export function applicationRecord(data) {
     year_completed: Number(data.yearCompleted), years_experience: years,
     experience_range: Object.hasOwn(experience, data.yearsExperience) ? data.yearsExperience : null,
     hourly_rate: Number(data.hourlyRate),
+    online_hourly_rate: data.teachingMode.includes('online') ? Number(data.onlineHourlyRate ?? data.hourlyRate) : null,
+    in_person_hourly_rate: data.teachingMode.includes('in-person') ? Number(data.inPersonHourlyRate ?? data.hourlyRate) : null,
   };
 }
 export function databaseIssue(res, error) {
+  if(error?.code==='PT422'){res.status(422).json({code:'IDENTITY_CONFLICT',field:'idNumber',message:error.message});return true;}
   const status = { '42501': 403, PT409: 409, '23505': 409, P0002: 404, '22023': 400, '23514': 400, '23502': 400, '23503': 400, '22P02': 400, PGRST200: 503, PGRST202: 503, PGRST204: 503, '42703': 503, '42P01': 503 }[error?.code];
   if (!status) return false;
   res.status(status).json({ message: status === 503 ? 'This feature is temporarily unavailable. Please try again later.' : error.code === '23505' ? 'An application is already awaiting review. Reload to see its status.' : error.message });
@@ -49,7 +52,11 @@ export const createSubmitApplication = ({notifyAdmins=notifyApplicationAdmins}={
     if (existing) { await cleanSubmittedDraftFiles(req); return res.status(200).json({ message: 'Your application is already saved in the review portal.', applicationId: existing.id, status: existing.status }); }
     const { data: open, error: openError } = await req.supabase.from('tutor_applications').select('id').eq('user_id', req.userId).in('status', ['submitted', 'under_review']).limit(1);
     if (openError) throw openError;
-    if (open.length) return res.status(409).json({ message: 'You already have an application awaiting review. Reload to see its status.' });
+    if (open.length) {
+      const {data:profile,error}=await req.supabase.from('profiles').select('identity_correction_required').eq('id',req.userId).single();
+      if(error)throw error;
+      if(!profile?.identity_correction_required)return res.status(409).json({ message: 'You already have an application awaiting review. Reload to see its status.' });
+    }
     const { data: subjects, error: subjectError } = await req.supabase.from('subjects').select('id,name').eq('is_active', true).in('name', req.body.application.subjects);
     if (subjectError) throw subjectError;
     if (subjects.length !== new Set(req.body.application.subjects).size) return res.status(400).json({ message: 'Choose current subjects from the subject catalogue.' });

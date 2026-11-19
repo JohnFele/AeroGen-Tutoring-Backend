@@ -9,6 +9,7 @@ import { downloadBugScreenshot } from '../utils/bugReports.js';
 import { learningAction, learningHistory, learningProgress, markLearningTutorialSeen } from '../controllers/learning.controller.js';
 import { tutorLibrary,saveLibraryBookmark,answerLibraryLesson,importLibraryProgress } from '../controllers/resources.controller.js';
 const router=Router();
+import { bookingActionFailure } from '../controllers/staffActions.controller.js';
 router.use(authorize);
 router.use(messagingAccountLimiter);
 router.get('/tickets',myTickets);
@@ -51,6 +52,7 @@ router.get('/bookable-students',bookableStudents);
 router.get('/my-tutors',myTutors);
 router.post('/bookings',bookingRequestLimiter,requestBooking);
 router.patch('/bookings/:id',respondToBooking);
+router.post('/bookings/:id/action-failure',supportLimiter,bookingActionFailure);
 router.post('/bookings/:id/report',supportLimiter,reportBooking);
 router.get('/',async(req,res,next)=>{
   try{const {data,error}=await req.supabase.rpc('my_tutoring_workspace',{_conversation_previews:true});if(error)throw error;res.set('Cache-Control','no-store');return res.json(data);}catch(error){return next(error);}

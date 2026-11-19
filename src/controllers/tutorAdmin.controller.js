@@ -52,7 +52,7 @@ async function allRows(client,table,columns,key='id') {
     if(data.length<500) return rows;
   }
 }
-const tutorColumns='*,profiles!tutor_profiles_user_id_fkey(id,first_name,last_name,email,phone,role),tutor_subjects(subjects(id,name,slug))';
+const tutorColumns='*,profiles!tutor_profiles_user_id_fkey(id,first_name,last_name,email,phone,role,updated_at),tutor_subjects(subjects(id,name,slug))';
 export const tutorAudit=async(req,res,next)=>{
   if(!uuid.test(req.params.id))return res.status(400).json({message:'Invalid tutor ID.'});
   try{const {data,error}=await req.supabase.from('tutor_profile_audit').select('id,actor_id,created_at,before_data,after_data,profiles!tutor_profile_audit_actor_id_fkey(first_name,last_name)').eq('tutor_id',req.params.id).order('created_at',{ascending:false}).limit(20);if(error)throw error;return res.json({audit:data});}catch(error){return next(error);}
